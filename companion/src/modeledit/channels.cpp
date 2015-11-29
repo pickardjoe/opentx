@@ -76,6 +76,13 @@ void LimitsGroup::updateMinMax(int max)
 Channels::Channels(QWidget * parent, ModelData & model, GeneralSettings & generalSettings, Firmware * firmware):
   ModelPanel(parent, model, generalSettings, firmware)
 {
+}
+
+void Channels::populate()
+{
+  qDebug() << "CustomFunctionsPanel::populate()";
+  Stopwatch s1("Channels");
+
   int channelNameMaxLen = firmware->getCapability(ChannelsName);
 
   QStringList headerLabels;
@@ -91,6 +98,8 @@ Channels::Channels(QWidget * parent, ModelData & model, GeneralSettings & genera
   if (firmware->getCapability(SYMLimits))
     headerLabels << tr("Linear Subtrim");
   TableLayout * tableLayout = new TableLayout(this, firmware->getCapability(LogicalSwitches), headerLabels);
+
+  s1.report("header");
 
   for (int i=0; i<firmware->getCapability(Outputs); i++) {
     int col = 0;
@@ -108,25 +117,25 @@ Channels::Channels(QWidget * parent, ModelData & model, GeneralSettings & genera
       name->setMaxLength(channelNameMaxLen);
       QRegExp rx(CHAR_FOR_NAMES_REGEX);
       name->setValidator(new QRegExpValidator(rx, this));
-      name->setText(model.limitData[i].name);
+      name->setText(model->limitData[i].name);
       connect(name, SIGNAL(editingFinished()), this, SLOT(nameEdited()));
       tableLayout->addWidget(i, col++, name);
     }
 
     // Channel offset
-    limitsGroups << new LimitsGroup(firmware, tableLayout, i, col++, model.limitData[i].offset, -1000, 1000, 0);
+    limitsGroups << new LimitsGroup(firmware, tableLayout, i, col++, model->limitData[i].offset, -1000, 1000, 0);
 
     // Channel min
-    limitsGroups << new LimitsGroup(firmware, tableLayout, i, col++, model.limitData[i].min, -model.getChannelsMax()*10, 0, -1000);
+    limitsGroups << new LimitsGroup(firmware, tableLayout, i, col++, model->limitData[i].min, -model->getChannelsMax()*10, 0, -1000);
 
     // Channel max
-    limitsGroups << new LimitsGroup(firmware, tableLayout, i, col++, model.limitData[i].max, 0, model.getChannelsMax()*10, 1000);
+    limitsGroups << new LimitsGroup(firmware, tableLayout, i, col++, model->limitData[i].max, 0, model->getChannelsMax()*10, 1000);
 
     // Channel inversion
     QComboBox * invCB = new QComboBox(this);
     invCB->insertItems(0, QStringList() << tr("---") << tr("INV"));
     invCB->setProperty("index", i);
-    invCB->setCurrentIndex((model.limitData[i].revert) ? 1 : 0);
+    invCB->setCurrentIndex((model->limitData[i].revert) ? 1 : 0);
     connect(invCB, SIGNAL(currentIndexChanged(int)), this, SLOT(invEdited()));
     tableLayout->addWidget(i, col++, invCB);
 
@@ -138,7 +147,7 @@ Channels::Channels(QWidget * parent, ModelData & model, GeneralSettings & genera
       for (int j=-numcurves; j<=numcurves; j++) {
         curveCB->addItem(CurveReference(CurveReference::CURVE_REF_CUSTOM, j).toString(), j);
       }
-      curveCB->setCurrentIndex(model.limitData[i].curve.value+numcurves);
+      curveCB->setCurrentIndex(model->limitData[i].curve.value+numcurves);
       connect(curveCB, SIGNAL(currentIndexChanged(int)), this, SLOT(curveEdited()));
       tableLayout->addWidget(i, col++, curveCB);
     }
@@ -153,7 +162,7 @@ Channels::Channels(QWidget * parent, ModelData & model, GeneralSettings & genera
       center->setMinimum(1500-ppmCenterMax);
       center->setMaximum(1500+ppmCenterMax);
       center->setValue(1500);
-      center->setValue(model.limitData[i].ppmCenter + 1500);
+      center->setValue(model->limitData[i].ppmCenter + 1500);
       connect(center, SIGNAL(editingFinished()), this, SLOT(ppmcenterEdited()));
       tableLayout->addWidget(i, col++, center);
     }
@@ -162,14 +171,16 @@ Channels::Channels(QWidget * parent, ModelData & model, GeneralSettings & genera
     if (firmware->getCapability(SYMLimits)) {
       QCheckBox * symlimits = new QCheckBox(this);
       symlimits->setProperty("index", i);
-      symlimits->setChecked(model.limitData[i].symetrical);
+      symlimits->setChecked(model->limitData[i].symetrical);
       connect(symlimits, SIGNAL(toggled(bool)), this, SLOT(symlimitsEdited()));
       tableLayout->addWidget(i, col++, symlimits);
     }
   }
+  s1.report("add elements");
 
   disableMouseScrolling();
   tableLayout->getTableWidget()->resizeColumnsToContents();
+  s1.report("end");
 }
 
 Channels::~Channels()

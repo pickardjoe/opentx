@@ -65,8 +65,8 @@ class CustomFunctionsPanel : public GenericPanel
     void populateFuncCB(QComboBox *b, unsigned int value);
     void populateGVmodeCB(QComboBox *b, unsigned int value);
     void populateFuncParamCB(QComboBox *b, uint function, unsigned int value, unsigned int adjustmode=0);
+    virtual void populate();
 
-    bool initialized;
     QSet<QString> tracksSet;
     QSet<QString> scriptsSet;
     int phononCurrent;

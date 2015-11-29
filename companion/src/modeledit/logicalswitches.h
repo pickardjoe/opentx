@@ -44,6 +44,7 @@ class LogicalSwitchesPanel : public ModelPanel
     void setSwitchWidgetVisibility(int i);
     int selectedSwitch;
 
+    virtual void populate();
     void populateCSWCB(QComboBox *b, int value);
     void populateAndSwitchCB(QComboBox *b, const RawSwitch & value);
     void updateLine(int index);

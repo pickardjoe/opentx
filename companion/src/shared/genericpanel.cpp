@@ -4,13 +4,15 @@
 #include <QLabel>
 #include <QGridLayout>
 #include <QSpacerItem>
+#include <QApplication>
 
 GenericPanel::GenericPanel(QWidget * parent, ModelData * model, GeneralSettings & generalSettings, Firmware * firmware):
   QWidget(parent),
   model(model),
   generalSettings(generalSettings),
   firmware(firmware),
-  lock(false)
+  lock(false),
+  populated(false)
 {
 }
 
@@ -100,5 +102,14 @@ void GenericPanel::disableMouseScrolling()
   Q_FOREACH(QSlider * slider, findChildren<QSlider*>()) {
     slider->installEventFilter(this);
     slider->setFocusPolicy(Qt::StrongFocus);
+  }
+}
+
+void GenericPanel::showEvent(QShowEvent *event) {
+  if (!populated) {
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    populate();
+    QApplication::restoreOverrideCursor();
+    populated = true;
   }
 }

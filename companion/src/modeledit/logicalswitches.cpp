@@ -11,7 +11,13 @@ LogicalSwitchesPanel::LogicalSwitchesPanel(QWidget * parent, ModelData & model, 
   ModelPanel(parent, model, generalSettings, firmware),
   selectedSwitch(0)
 {
-  int channelsMax = model.getChannelsMax(true);
+}
+
+void LogicalSwitchesPanel::populate()
+{
+  Stopwatch s1("LogicalSwitchesPanel"); 
+
+  int channelsMax = model->getChannelsMax(true);
 
   QStringList headerLabels;
   headerLabels << "#" << tr("Function") << tr("V1") << tr("V2") << tr("AND Switch");
@@ -20,6 +26,7 @@ LogicalSwitchesPanel::LogicalSwitchesPanel(QWidget * parent, ModelData & model, 
   }
   TableLayout * tableLayout = new TableLayout(this, firmware->getCapability(LogicalSwitches), headerLabels);
 
+  s1.report("header");
 
   lock = true;
   for (int i=0; i<firmware->getCapability(LogicalSwitches); i++) {
@@ -123,10 +130,13 @@ LogicalSwitchesPanel::LogicalSwitchesPanel(QWidget * parent, ModelData & model, 
     }
   }
 
+  s1.report("added elements");
+
   disableMouseScrolling();
   lock = false;
   update();
   tableLayout->getTableWidget()->resizeColumnsToContents();
+  s1.report("end");
 }
 
 LogicalSwitchesPanel::~LogicalSwitchesPanel()

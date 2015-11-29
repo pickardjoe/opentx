@@ -33,6 +33,7 @@ class Channels : public ModelPanel
     
   private:
     QVector<LimitsGroup *> limitsGroups;
+    virtual void populate();
 
   public slots:
     void refreshExtendedLimits();

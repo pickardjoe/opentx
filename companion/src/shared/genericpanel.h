@@ -34,6 +34,7 @@ class GenericPanel : public QWidget
     GeneralSettings & generalSettings;
     Firmware * firmware;
     bool lock;
+    bool populated;
     void addLabel(QGridLayout * gridLayout, const QString &text, int col, bool mimimize=false);
     void addEmptyLabel(QGridLayout * gridLayout, int col);
     void addHSpring(QGridLayout *, int col, int row);
@@ -41,6 +42,8 @@ class GenericPanel : public QWidget
     void addDoubleSpring(QGridLayout *, int col, int row);
     virtual bool eventFilter(QObject *obj, QEvent *event);
     void disableMouseScrolling();
+    virtual void showEvent(QShowEvent *event);
+    virtual void populate() {};
 };
 
 #endif
