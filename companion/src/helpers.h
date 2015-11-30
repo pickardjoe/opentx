@@ -2,6 +2,7 @@
 #define HELPERS_H
 
 #include <QtGui>
+#include <QDebug>
 #include "eeprominterface.h"
 
 extern const QColor colors[C9X_MAX_CURVES];
@@ -214,5 +215,40 @@ public:
 private:
   QTableWidget * tableWidget;  
 };
+
+
+class Stopwatch
+{
+public:
+  Stopwatch(const QString & name) :
+    name(name), total(0) {
+    timer.start();
+  };
+  ~Stopwatch() {};
+
+  void restart() {
+    total = 0;
+    timer.restart();
+  };
+
+  void report() {
+    qint64 elapsed = timer.restart();
+    total += elapsed;
+    qDebug() << name << QString("%1 ms [%2 ms]").arg(elapsed).arg(total);
+  };
+
+  void report(const QString & text) {
+    qint64 elapsed = timer.restart();
+    total += elapsed;
+    qDebug() << name << text << QString("%1 ms [%2 ms]").arg(elapsed).arg(total);
+  };
+
+private:
+  QString name;
+  QElapsedTimer timer;
+  qint64 total;
+};
+
+extern Stopwatch gStopwatch;
 
 #endif // HELPERS_H
