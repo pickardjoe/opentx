@@ -1,6 +1,9 @@
 #include "printdialog.h"
 #include "ui_printdialog.h"
 #include "helpers.h"
+#include "helpers_html.h"
+#include "eeprominterface.h"
+#include "modelprinter.h"
 #include <QPrinter>
 #include <QPrintDialog>
 

@@ -1,6 +1,9 @@
 #include "comparedialog.h"
 #include "ui_comparedialog.h"
 #include "helpers.h"
+#include "helpers_html.h"
+#include "eeprominterface.h"
+#include <algorithm>
 #include <QPrinter>
 #include <QPrintDialog>
 

@@ -267,7 +267,7 @@ QString ModelPrinter::printInputName(int idx)
   else {
     result = RawSource(SOURCE_TYPE_STICK, idx).toString(&model);
   }
-  return Qt::escape(result);
+  return result.toHtmlEscaped();
 }
 
 QString ModelPrinter::printInputLine(int idx)
@@ -286,26 +286,26 @@ QString ModelPrinter::printInputLine(const ExpoData & input)
   }
 
   if (firmware->getCapability(VirtualInputs)) {
-    str += Qt::escape(input.srcRaw.toString(&model));
+    str += input.srcRaw.toString(&model).toHtmlEscaped();
   }
 
-  str += " " + Qt::escape(tr("Weight")) + QString("(%1)").arg(getGVarString(input.weight,true));
-  if (input.curve.value) str += " " + Qt::escape(input.curve.toString());
+  str += " " + QObject::tr("Weight").toHtmlEscaped() + QString("(%1)").arg(getGVarString(input.weight,true));
+  if (input.curve.value) str += " " + input.curve.toString().toHtmlEscaped();
 
   QString flightModesStr = printFlightModes(input.flightModes);
-  if (!flightModesStr.isEmpty()) str += " " + Qt::escape(flightModesStr);
+  if (!flightModesStr.isEmpty()) str += " " + flightModesStr.toHtmlEscaped();
 
   if (input.swtch.type != SWITCH_TYPE_NONE) 
-    str += " " + Qt::escape(tr("Switch")) + QString("(%1)").arg(input.swtch.toString());
+    str += " " + QObject::tr("Switch").toHtmlEscaped() + QString("(%1)").arg(input.swtch.toString());
 
 
   if (firmware->getCapability(VirtualInputs)) {
-    if (input.carryTrim>0) str += " " + Qt::escape(tr("NoTrim"));
-    else if (input.carryTrim<0) str += " " + Qt::escape(RawSource(SOURCE_TYPE_TRIM, (-(input.carryTrim)-1)).toString(&model));
+    if (input.carryTrim>0) str += " " + QObject::tr("NoTrim").toHtmlEscaped();
+    else if (input.carryTrim<0) str += " " + (RawSource(SOURCE_TYPE_TRIM, (-(input.carryTrim)-1)).toString(&model));
   }
 
   if (firmware->getCapability(HasExpoNames) && input.name[0]) 
-    str += Qt::escape(QString(" [%1]").arg(input.name));
+    str += QString(" [%1]").arg(input.name).toHtmlEscaped();
 
   return str;
 }
@@ -321,7 +321,7 @@ QString ModelPrinter::printMixerName(int curDest)
     name.append("        ");
     str += name.left(8);
   }
-  return Qt::escape(str);
+  return str.toHtmlEscaped();
 }
 
 QString ModelPrinter::printMixerLine(int idx, bool showMultiplex, int highlightedSource)
@@ -344,43 +344,43 @@ QString ModelPrinter::printMixerLine(const MixData & mix, bool showMultiplex, in
     str += "&nbsp;&nbsp;";
   }
   // highlight source if needed
-  QString source = Qt::escape(mix.srcRaw.toString(&model));
+  QString source = mix.srcRaw.toString(&model).toHtmlEscaped();
   if ( (mix.srcRaw.type == SOURCE_TYPE_CH) && (mix.srcRaw.index+1 == (int)highlightedSource) ) {
     source = "<b>" + source + "</b>";
   }
   str += "&nbsp;" + source;
 
-  str += " " + Qt::escape(tr("Weight(%1)").arg(getGVarString(mix.weight, true)));
+  str += " " + QObject::tr("Weight(%1)").arg(getGVarString(mix.weight, true));
 
   QString flightModesStr = printFlightModes(mix.flightModes);
   if (!flightModesStr.isEmpty())
-    str += " " + Qt::escape(flightModesStr);
+    str += " " + flightModesStr.toHtmlEscaped();
 
   if (mix.swtch.type != SWITCH_TYPE_NONE)
-    str += " " + Qt::escape(tr("Switch(%1)").arg(mix.swtch.toString()));
+    str += " " + QObject::tr("Switch(%1)").arg(mix.swtch.toString());
 
   if (mix.carryTrim > 0)
-    str += " " + Qt::escape(tr("NoTrim"));
+    str += " " + tr("NoTrim");
   else if (mix.carryTrim < 0)
     str += " " + RawSource(SOURCE_TYPE_TRIM, (-(mix.carryTrim)-1)).toString(&model);
 
   if (firmware->getCapability(HasNoExpo) && mix.noExpo)
-    str += " " + Qt::escape(tr("No DR/Expo"));
+    str += " " + (tr("No DR/Expo"));
   if (mix.sOffset)
-    str += " " + Qt::escape(tr("Offset(%1)").arg(getGVarString(mix.sOffset)));
+    str += " " + (tr("Offset(%1)").arg(getGVarString(mix.sOffset)));
   if (mix.curve.value)
-    str += " " + Qt::escape(mix.curve.toString());
+    str += " " + (mix.curve.toString());
   int scale = firmware->getCapability(SlowScale);
   if (scale == 0)
     scale = 1;
   if (mix.delayDown || mix.delayUp)
-    str += " " + Qt::escape(tr("Delay(u%1:d%2)").arg((double)mix.delayUp/scale).arg((double)mix.delayDown/scale));
+    str += " " + (tr("Delay(u%1:d%2)").arg((double)mix.delayUp/scale).arg((double)mix.delayDown/scale));
   if (mix.speedDown || mix.speedUp)
-    str += " " + Qt::escape(tr("Slow(u%1:d%2)").arg((double)mix.speedUp/scale).arg((double)mix.speedDown/scale));
+    str += " " + (tr("Slow(u%1:d%2)").arg((double)mix.speedUp/scale).arg((double)mix.speedDown/scale));
   if (mix.mixWarn)
-    str += " " + Qt::escape(tr("Warn(%1)").arg(mix.mixWarn));
+    str += " " + (tr("Warn(%1)").arg(mix.mixWarn));
   if (firmware->getCapability(HasMixerNames) && mix.name[0]) 
-    str += Qt::escape(QString(" [%1]").arg(mix.name));
+    str += (QString(" [%1]").arg(mix.name));
   return str;
 }
 

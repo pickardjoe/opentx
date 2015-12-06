@@ -1,8 +1,9 @@
 #ifndef _COMPAREDIALOG_H
 #define _COMPAREDIALOG_H
 
-#include <QDialog>
-#include <QLabel>
+#include <QtWidgets>
+#include <QDir>
+#include "eeprominterface.h"
 #include "multimodelprinter.h"
 
 namespace Ui {

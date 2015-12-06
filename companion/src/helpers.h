@@ -3,6 +3,9 @@
 
 #include <QtGui>
 #include <QDebug>
+#include <QCheckBox>
+#include <QSpinBox>
+#include <QTableWidget>
 #include "eeprominterface.h"
 
 extern const QColor colors[C9X_MAX_CURVES];

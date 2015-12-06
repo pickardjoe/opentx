@@ -14,7 +14,7 @@
 
 #ifndef WIZARDDIALOG_H
 #define WIZARDDIALOG_H
-#include <QWizard>
+#include <QtWidgets>
 #include "wizarddata.h"
 
 QT_BEGIN_NAMESPACE
