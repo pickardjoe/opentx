@@ -4,14 +4,24 @@
 set -e
 set -x
 
-cd radio/src/
+mkdir build
+cd build 
+
+# OpenTX on Taranis and Companion
+rm -rf *
+cmake -DCMAKE_BUILD_TYPE=Debug -DPCB=TARANIS .. 
+make
+make firmware.bin
+make gtests
+./gtests
 
 # OpenTX on 9X stock
-make clean
-make        PCB=9X EXT=FRSKY HELI=YES
-make simu   PCB=9X EXT=FRSKY HELI=YES 
-make gtests EXT=FRSKY HELI=YES
+rm -rf *
+cmake -DCMAKE_BUILD_TYPE=Debug -DPCB=9X -DEXT=FRSKY -DHELI=YES .. 
+make -j2 firmware.bin
+make -j2 gtests
 ./gtests
+
 
 # OpenTX on 9X stock with MAVLINK
 make clean
