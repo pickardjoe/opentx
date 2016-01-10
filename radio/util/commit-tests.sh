@@ -39,7 +39,7 @@ make -j2 firmware.bin
 cmake -DCMAKE_BUILD_TYPE=Debug -DPCB=HORUS -DHELI=NO -DUSB=SERIAL -DCLI=NO -DDEBUG=YES .. 
 make -j2 simu
 #make gtests
-./gtests
+#./gtests
 
 
 # Old, not yet converted
