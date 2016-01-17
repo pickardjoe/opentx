@@ -385,7 +385,11 @@ LUA_COMPILER = NO
 
 # Enable ADC jitter measurement
 # Values = NO, YES
-MEASURE_JITTER = NO
+JITTER_MEASURE = NO
+
+# Enable ADC jitter filtering
+# Values = NO, YES
+JITTER_FILTER = NO
 
 #------- END BUILD OPTIONS ---------------------------
 
@@ -1071,8 +1075,11 @@ ifeq ($(PCB), TARANIS)
   ifeq ($(WATCHDOG_TEST), YES)
     CPPDEFS += -DWATCHDOG_TEST
   endif
-  ifeq ($(MEASURE_JITTER), YES)
-    CPPDEFS += -DMEASURE_JITTER
+  ifeq ($(JITTER_MEASURE), YES)
+    CPPDEFS += -DJITTER_MEASURE
+  endif
+  ifeq ($(JITTER_FILTER), YES)
+    CPPDEFS += -DJITTER_FILTER
   endif
 endif
 

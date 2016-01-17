@@ -160,7 +160,7 @@ void dumpTraceBuffer();
 #endif
 
 
-#if defined(MEASURE_JITTER)  && defined(__cplusplus)
+#if defined(JITTER_MEASURE)  && defined(__cplusplus)
 
 class JitterMeter {
 public:
@@ -191,7 +191,7 @@ public:
   };
 };
 
-#endif  // defined(MEASURE_JITTER)
+#endif  // defined(JITTER_MEASURE)
 
 #endif  // #ifndef debug_h
 

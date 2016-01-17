@@ -1789,9 +1789,9 @@ extern Clipboard clipboard;
 extern uint16_t s_anaFilt[NUMBER_ANALOG];
 #endif
 
-#if defined(MEASURE_JITTER)
+#if defined(JITTER_MEASURE)
 extern JitterMeter rawJitter[NUMBER_ANALOG];
 extern JitterMeter avgJitter[NUMBER_ANALOG];
-#endif  // defined(MEASURE_JITTER)
+#endif  // defined(JITTER_MEASURE)
 
 #endif

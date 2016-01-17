@@ -56,7 +56,7 @@ void menuGeneralDiagAna(uint8_t event)
     lcd_putc(lcdNextPos, y, ':');
 #endif
     lcd_outhex4(x+3*FW-1, y, anaIn(i));
-#if defined(MEASURE_JITTER)
+#if defined(JITTER_MEASURE)
     lcd_outdezAtt(x+10*FW-1, y, rawJitter[i].get());
     lcd_outdezAtt(x+13*FW-1, y, avgJitter[i].get());
     lcd_outdez8(x+17*FW-1, y, (int16_t)calibratedStick[CONVERT_MODE(i)]*25/256);

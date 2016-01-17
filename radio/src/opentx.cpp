@@ -1428,12 +1428,12 @@ uint16_t BandGap = 2040 ;
 uint16_t BandGap ;
 #endif
 
-#if defined(MEASURE_JITTER)
+#if defined(JITTER_MEASURE)
 JitterMeter rawJitter[NUMBER_ANALOG];
 JitterMeter avgJitter[NUMBER_ANALOG];
 tmr10ms_t jitterResetTime = 0;
-#define MEASURE_JITTER_ACTIVE()   (menuHandlers[menuLevel] == menuGeneralDiagAna)
-#endif  // defined(MEASURE_JITTER)
+#define JITTER_MEASURE_ACTIVE()   (menuHandlers[menuLevel] == menuGeneralDiagAna)
+#endif  // defined(JITTER_MEASURE)
 
 #if !defined(SIMU)
 uint16_t anaIn(uint8_t chan)
@@ -1471,8 +1471,8 @@ void getADC()
 {
   uint16_t temp[NUMBER_ANALOG] = { 0 };
 
-#if defined(MEASURE_JITTER)
-  if (jitterResetTime < g_tmr10ms) {
+#if defined(JITTER_MEASURE)
+  if (JITTER_MEASURE_ACTIVE() && jitterResetTime < g_tmr10ms) {
     for (uint32_t x=0; x<NUMBER_ANALOG; x++) {
       rawJitter[x].reset();
       avgJitter[x].reset();
@@ -1484,9 +1484,9 @@ void getADC()
   for (uint32_t i=0; i<4; i++) {
     adcRead();
     for (uint32_t x=0; x<NUMBER_ANALOG; x++) {
-#if defined(MEASURE_JITTER)
+#if defined(JITTER_MEASURE)
       uint16_t val = getAnalogValue(x);
-      if (MEASURE_JITTER_ACTIVE()) {
+      if (JITTER_MEASURE_ACTIVE()) {
         rawJitter[x].measure(val);
       }
       temp[x] += val;
@@ -1501,8 +1501,29 @@ void getADC()
 
   for (uint32_t x=0; x<NUMBER_ANALOG; x++) {
     uint16_t v = temp[x] >> 3;
+
 #if defined(VIRTUALINPUTS)
-    if (calibrationState) v = temp[x] >> 1;
+
+    if (calibrationState) {
+      v = temp[x] >> 1;
+    }
+#if defined(JITTER_FILTER)
+    else {
+      // jitter filter
+      uint16_t diff = (v > s_anaFilt[x]) ? (v - s_anaFilt[x]) : (s_anaFilt[x] - v);
+      if (diff < 10) {
+        // apply filter
+        v = (7 * s_anaFilt[x] + v) >> 3;
+      }
+    }
+#endif
+
+#if defined(JITTER_MEASURE)
+    if (JITTER_MEASURE_ACTIVE()) {
+      avgJitter[x].measure(v);
+    }
+#endif
+
     StepsCalibData * calib = (StepsCalibData *) &g_eeGeneral.calib[x];
     if (!calibrationState && IS_POT_MULTIPOS(x) && calib->count>0 && calib->count<XPOTS_MULTIPOS_COUNT) {
       uint8_t vShifted = (v >> 4);
@@ -1514,14 +1535,11 @@ void getADC()
         }
       }
     }
-    else
+    else 
 #endif
-    s_anaFilt[x] = v;
-#if defined(MEASURE_JITTER)
-    if (MEASURE_JITTER_ACTIVE()) {
-      avgJitter[x].measure(v);
+    {
+      s_anaFilt[x] = v;
     }
-#endif
   }
 }
 #endif
