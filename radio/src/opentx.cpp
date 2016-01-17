@@ -1447,6 +1447,13 @@ uint16_t BandGap = 2040 ;
 uint16_t BandGap ;
 #endif
 
+#if defined(MEASURE_JITTER)
+JitterMeter rawJitter[NUMBER_ANALOG];
+JitterMeter avgJitter[NUMBER_ANALOG];
+tmr10ms_t jitterResetTime = 0;
+#define MEASURE_JITTER_ACTIVE()   (g_menuStack[g_menuStackPtr] == menuGeneralDiagAna)
+#endif  // defined(MEASURE_JITTER)
+
 #if !defined(SIMU)
 uint16_t anaIn(uint8_t chan)
 {
@@ -1479,10 +1486,28 @@ void getADC()
 {
   uint16_t temp[NUMBER_ANALOG] = { 0 };
 
+#if defined(MEASURE_JITTER)
+  if (jitterResetTime < g_tmr10ms) {
+    for (uint32_t x=0; x<NUMBER_ANALOG; x++) {
+      rawJitter[x].reset();
+      avgJitter[x].reset();
+    }
+    jitterResetTime = g_tmr10ms + 100;  //every second
+  }
+#endif
+
   for (uint32_t i=0; i<4; i++) {
     adcRead();
     for (uint32_t x=0; x<NUMBER_ANALOG; x++) {
+#if defined(MEASURE_JITTER)
+      uint16_t val = Analog_values[x];
+      if (MEASURE_JITTER_ACTIVE()) {
+        rawJitter[x].measure(val);
+      }
+      temp[x] += val;
+#else
       temp[x] += Analog_values[x];
+#endif
     }
 #if defined(PCBTARANIS)
     if (calibrationState) break;
@@ -1507,6 +1532,11 @@ void getADC()
     else
 #endif
     s_anaFilt[x] = v;
+#if defined(MEASURE_JITTER)
+    if (MEASURE_JITTER_ACTIVE()) {
+      avgJitter[x].measure(v);
+    }
+#endif
   }
 }
 #else

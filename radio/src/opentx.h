@@ -1751,4 +1751,9 @@ void varioWakeup();
   extern void usbPluggedIn();
 #endif
 
+#if defined(MEASURE_JITTER)
+extern JitterMeter rawJitter[NUMBER_ANALOG];
+extern JitterMeter avgJitter[NUMBER_ANALOG];
+#endif  // defined(MEASURE_JITTER)
+
 #endif

@@ -328,6 +328,10 @@ SIMU_DISKIO = NO
 # Values = NO, YES
 SIMU_AUDIO = NO
 
+# Enable ADC jitter measurement
+# Values = NO, YES
+MEASURE_JITTER = NO
+
 #------- END BUILD OPTIONS ---------------------------
 
 # Define programs and commands.
@@ -844,6 +848,9 @@ ifeq ($(PCB), TARANIS)
   endif
   ifeq ($(MIXERS_MONITOR), YES)
     CPPDEFS += -DMIXERS_MONITOR
+  endif
+  ifeq ($(MEASURE_JITTER), YES)
+    CPPDEFS += -DMEASURE_JITTER
   endif
 endif
 

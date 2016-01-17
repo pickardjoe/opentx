@@ -169,5 +169,38 @@ void dumpTraceBuffer();
 #endif
 
 
+#if defined(MEASURE_JITTER) && defined(__cplusplus)
+
+class JitterMeter {
+public:
+  uint16_t min;
+  uint16_t max;
+  uint16_t measured;
+
+  JitterMeter() { 
+    reset(); 
+    measured = 0; 
+  };
+
+  void reset() { 
+    // store mesaurement
+    measured = max - min;
+    //reset - begin new measurement
+    min = 0xFFFF; 
+    max = 0; 
+  };
+
+  void measure(uint16_t value) { 
+    if (value > max) max = value;
+    if (value < min) min = value;
+  };
+
+  uint16_t get() const { 
+    return measured; 
+  };
+};
+
+#endif  // defined(MEASURE_JITTER)
+
 #endif  // #ifndef debug_h
 

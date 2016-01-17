@@ -1310,11 +1310,17 @@ void menuGeneralDiagAna(uint8_t event)
 
   for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
     uint8_t y = 1+FH+(i/2)*FH;
-    uint8_t x = i&1 ? 64+5 : 0;
+    uint8_t x = i&1 ? LCD_W/2 + FW : 0;
     putsStrIdx(x, y, PSTR("A"), i+1);
     lcd_putc(lcdNextPos, y, ':');
     lcd_outhex4(x+3*FW-1, y, anaIn(i));
+#if defined(MEASURE_JITTER)
+    lcd_outdezAtt(x+10*FW-1, y, rawJitter[i].get());
+    lcd_outdezAtt(x+13*FW-1, y, avgJitter[i].get());
+    lcd_outdez8(x+17*FW-1, y, (int16_t)calibratedStick[CONVERT_MODE(i)]*25/256);
+#else    
     lcd_outdez8(x+10*FW-1, y, (int16_t)calibratedStick[CONVERT_MODE(i)]*25/256);
+#endif
   }
 
 #if !defined(CPUARM)
