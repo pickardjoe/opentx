@@ -383,6 +383,10 @@ WARNINGS_AS_ERRORS = NO
 # Values = NO, YES
 LUA_COMPILER = NO
 
+# Enable ADC jitter measurement
+# Values = NO, YES
+MEASURE_JITTER = NO
+
 #------- END BUILD OPTIONS ---------------------------
 
 # Define programs and commands.
@@ -1066,6 +1070,9 @@ ifeq ($(PCB), TARANIS)
   endif
   ifeq ($(WATCHDOG_TEST), YES)
     CPPDEFS += -DWATCHDOG_TEST
+  endif
+  ifeq ($(MEASURE_JITTER), YES)
+    CPPDEFS += -DMEASURE_JITTER
   endif
 endif
 

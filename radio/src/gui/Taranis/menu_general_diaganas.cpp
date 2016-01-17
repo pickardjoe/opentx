@@ -51,12 +51,18 @@ void menuGeneralDiagAna(uint8_t event)
     lcd_putc(x+2*FW-2, y, ':');
 #else
     coord_t y = MENU_HEADER_HEIGHT + 1 + (i/2)*FH;
-    uint8_t x = i&1 ? 64+5 : 0;
+    uint8_t x = i&1 ? LCD_W/2 + FW : 0;
     putsStrIdx(x, y, PSTR("A"), i+1);
     lcd_putc(lcdNextPos, y, ':');
 #endif
     lcd_outhex4(x+3*FW-1, y, anaIn(i));
+#if defined(MEASURE_JITTER)
+    lcd_outdezAtt(x+10*FW-1, y, rawJitter[i].get());
+    lcd_outdezAtt(x+13*FW-1, y, avgJitter[i].get());
+    lcd_outdez8(x+17*FW-1, y, (int16_t)calibratedStick[CONVERT_MODE(i)]*25/256);
+#else    
     lcd_outdez8(x+10*FW-1, y, (int16_t)calibratedStick[CONVERT_MODE(i)]*25/256);
+#endif
   }
 
   lcd_putsLeft(MENU_HEADER_HEIGHT+1+5*FH, STR_BATT_CALIB);
