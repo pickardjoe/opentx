@@ -1790,8 +1790,8 @@ extern uint16_t s_anaFilt[NUMBER_ANALOG];
 #endif
 
 #if defined(JITTER_MEASURE)
-extern JitterMeter rawJitter[NUMBER_ANALOG];
-extern JitterMeter avgJitter[NUMBER_ANALOG];
+extern JitterMeter<uint16_t> rawJitter[NUMBER_ANALOG];
+extern JitterMeter<uint16_t> avgJitter[NUMBER_ANALOG];
 #endif  // defined(JITTER_MEASURE)
 
 #endif

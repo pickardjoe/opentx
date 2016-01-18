@@ -1429,8 +1429,8 @@ uint16_t BandGap ;
 #endif
 
 #if defined(JITTER_MEASURE)
-JitterMeter rawJitter[NUMBER_ANALOG];
-JitterMeter avgJitter[NUMBER_ANALOG];
+JitterMeter<uint16_t> rawJitter[NUMBER_ANALOG];
+JitterMeter<uint16_t> avgJitter[NUMBER_ANALOG];
 tmr10ms_t jitterResetTime = 0;
 #define JITTER_MEASURE_ACTIVE()   (menuHandlers[menuLevel] == menuGeneralDiagAna)
 #endif  // defined(JITTER_MEASURE)
@@ -1472,12 +1472,12 @@ void getADC()
   uint16_t temp[NUMBER_ANALOG] = { 0 };
 
 #if defined(JITTER_MEASURE)
-  if (JITTER_MEASURE_ACTIVE() && jitterResetTime < g_tmr10ms) {
+  if (JITTER_MEASURE_ACTIVE() && jitterResetTime < get_tmr10ms()) {
     for (uint32_t x=0; x<NUMBER_ANALOG; x++) {
       rawJitter[x].reset();
       avgJitter[x].reset();
     }
-    jitterResetTime = g_tmr10ms + 100;  //every second
+    jitterResetTime = get_tmr10ms() + 100;  //every second
   }
 #endif
 
