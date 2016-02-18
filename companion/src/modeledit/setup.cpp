@@ -66,9 +66,11 @@ TimerPanel::~TimerPanel()
 
 void TimerPanel::update()
 {
-  int min = timer.val / 60;
-  int sec = timer.val % 60;
-  ui->value->setTime(QTime(0, min, sec));
+  int hour = timer.val / 3600;
+  int min = (timer.val - (hour * 3600)) / 60;
+  int sec = (timer.val - (hour * 3600)) % 60;
+
+  ui->value->setTime(QTime(hour, min, sec));
 
   if (firmware->getCapability(PermTimers)) {
     int sign = 1;
