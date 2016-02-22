@@ -121,6 +121,7 @@
   #define MAX_SCRIPTS          7
   #define MAX_INPUTS           32
   #define NUM_TRAINER          16
+  #define NUM_SERIAL           16
   #if defined(REV9E)
     #define NUM_POTS           8
     #define NUM_XPOTS          4
@@ -1899,6 +1900,10 @@ enum MixSources {
 
   MIXSRC_FIRST_TRAINER,                     LUA_EXPORT_MULTIPLE("trn", "Trainer input %d", NUM_TRAINER)
   MIXSRC_LAST_TRAINER = MIXSRC_FIRST_TRAINER+NUM_TRAINER-1,
+#if defined(USB_CONTROL)
+  MIXSRC_FIRST_SERIAL,                     LUA_EXPORT_MULTIPLE("srl", "Serial input %d", NUM_SERIAL)
+  MIXSRC_LAST_SERIAL = MIXSRC_FIRST_SERIAL+NUM_SERIAL-1,
+#endif
 
   MIXSRC_FIRST_CH,
   MIXSRC_CH1 = MIXSRC_FIRST_CH,             LUA_EXPORT_MULTIPLE("ch", "Channel CH%d", NUM_CHNOUT)

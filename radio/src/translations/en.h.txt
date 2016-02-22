@@ -746,6 +746,7 @@
 #define TR_MENURADIOSETUP      "RADIO SETUP"
 #define TR_MENUDATEANDTIME     "DATE AND TIME"
 #define TR_MENUTRAINER         "TRAINER"
+#define TR_MENUSERIAL          "SERIAL"
 #define TR_MENUGLOBALFUNCS     "GLOBAL FUNCTIONS"
 #define TR_MENUVERSION         "VERSION"
 #define TR_MENUDIAG            TR("SWITCHES", "SWITCH TEST")
@@ -920,6 +921,7 @@
 #define TR_RESET_BTN           "[Reset]"
 #define TR_SET                 "[Set]"
 #define TR_TRAINER             "Trainer Port"
+#define TR_SERIAL              "Serial Port"
 #define TR_ANTENNAPROBLEM      CENTER "TX Antenna problem!"
 #define TR_MODELIDUSED         TR("ID already used","Model ID already used")
 #define TR_MODULE              INDENT "Module"
@@ -1097,6 +1099,7 @@
 #define TR_MENU_SWITCHES       "\312Switches"
 #define TR_MENU_LOGICAL_SWITCHES "\312Logical Switches"
 #define TR_MENU_TRAINER        "\317Trainer"
+#define TR_MENU_SERIAL         "\318Serial"
 #define TR_MENU_CHANNELS       "\320Channels"
 #define TR_MENU_GVARS          "\311GVars"
 #define TR_MENU_TELEMETRY      "\321Telemetry"

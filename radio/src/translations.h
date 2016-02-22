@@ -507,6 +507,7 @@ extern const pm_char STR_TRIMS2OFFSETS[];
 extern const pm_char STR_MENURADIOSETUP[];
 extern const pm_char STR_MENUDATEANDTIME[];
 extern const pm_char STR_MENUTRAINER[];
+extern const pm_char STR_MENUSERIAL[];
 extern const pm_char STR_MENUGLOBALFUNCS[];
 extern const pm_char STR_MENUVERSION[];
 extern const pm_char STR_MENUDIAG[];
@@ -763,6 +764,7 @@ extern const pm_char STR_BLCOLOR[];
 
 #if defined(CPUARM)
   extern const pm_char STR_TRAINER[];
+  extern const pm_char STR_SERIAL[];
   extern const pm_char STR_MODULE_BIND[];
   extern const pm_char STR_CHANNELRANGE[];
   extern const pm_char STR_SET[];
@@ -842,6 +844,7 @@ extern const pm_char STR_BLCOLOR[];
   extern const pm_char STR_MENU_SWITCHES[];
   extern const pm_char STR_MENU_LOGICAL_SWITCHES[];
   extern const pm_char STR_MENU_TRAINER[];
+  extern const pm_char STR_MENU_SERIAL[];
   extern const pm_char STR_MENU_CHANNELS[];
   extern const pm_char STR_MENU_GVARS[];
   extern const pm_char STR_MENU_TELEMETRY[];

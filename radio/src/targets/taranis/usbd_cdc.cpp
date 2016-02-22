@@ -211,7 +211,29 @@ static uint16_t VCP_DataRx (uint8_t* Buf, uint32_t Len)
   for (uint32_t i = 0; i < Len; i++)
   {
     cliRxFifo.push(Buf[i]);
-  } 
+  }
+#elif defined(USB_CONTROL)
+  for (uint32_t i = 0; i < Len; i++)
+  {
+	  if(127 < Buf[i])
+	  {
+		  continue;
+	  }
+	  uint8_t channel = Buf[i];
+	  ++i;
+	  if(127 < Buf[i])
+	  {
+		  continue;
+	  }
+	  int16_t val = ((int16_t)Buf[i]) << 7;
+	  ++i;
+	  if(127 < Buf[i])
+	  {
+		  continue;
+	  }
+	  val += (int16_t)Buf[i];
+	  serialInput[channel] = val;
+  }  
 #endif
 
   return USBD_OK;

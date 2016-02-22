@@ -1011,7 +1011,9 @@ ifeq ($(PCB), TARANIS)
     SRC += targets/taranis/usbd_hid_joystick.c
   else ifeq ($(USB), SERIAL)
     CPPDEFS += -DUSB_SERIAL
+    CPPDEFS += -DUSB_CONTROL
     SRC += $(STM32USBPATH)/STM32_USB_Device_Library/Class/cdc/src/usbd_cdc_core.c
+    SRC += serial_input.cpp
     EXTRABOARDSRC += targets/taranis/usbd_cdc.cpp
   else
     CPPDEFS += -DUSB_MASS_STORAGE

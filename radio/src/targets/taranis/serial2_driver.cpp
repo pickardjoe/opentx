@@ -83,7 +83,7 @@ void serial2Init(unsigned int mode, unsigned int protocol)
     case UART_MODE_TELEMETRY_MIRROR:
       uart3Setup(FRSKY_SPORT_BAUDRATE);
       break;
-#if !defined(USB_SERIAL) && (defined(DEBUG) || defined(CLI))
+#if !defined(USB_SERIAL) && (defined(DEBUG) || defined(CLI) || defined(USB_CONTROL))
     case UART_MODE_DEBUG:
       uart3Setup(DEBUG_BAUDRATE);
       break;

@@ -37,6 +37,10 @@
 #include "opentx.h"
 #include "timers.h"
 
+#if defined(USB_CONTROL)
+#include "serial_input.h"
+#endif
+
 #if defined(VIRTUALINPUTS)
   int8_t  virtualInputsTrims[NUM_INPUTS];
 #else
@@ -299,8 +303,10 @@ getvalue_t getValue(mixsrc_t i)
 #endif
   else if (i<=MIXSRC_LAST_LOGICAL_SWITCH) return getSwitch(SWSRC_FIRST_LOGICAL_SWITCH+i-MIXSRC_FIRST_LOGICAL_SWITCH) ? 1024 : -1024;
   else if (i<=MIXSRC_LAST_TRAINER) { int16_t x = ppmInput[i-MIXSRC_FIRST_TRAINER]; if (i<MIXSRC_FIRST_TRAINER+NUM_CAL_PPM) { x-= g_eeGeneral.trainer.calib[i-MIXSRC_FIRST_TRAINER]; } return x*2; }
+#if defined(USB_CONTROL)
+  else if (i<=MIXSRC_LAST_SERIAL) { int16_t x = serialInput[i-MIXSRC_FIRST_SERIAL]; return x*2; }
+#endif
   else if (i<=MIXSRC_LAST_CH) return ex_chans[i-MIXSRC_CH1];
-
 #if defined(GVARS)
   else if (i<=MIXSRC_LAST_GVAR) return GVAR_VALUE(i-MIXSRC_GVAR1, getGVarFlightPhase(mixerCurrentFlightMode, i-MIXSRC_GVAR1));
 #endif
