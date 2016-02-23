@@ -182,6 +182,7 @@ void usbSerialPutc(uint8_t c)
   }  
 }
 
+
 /**
   * @brief  VCP_DataRx
   *         Data received over USB OUT endpoint is available here
@@ -217,22 +218,22 @@ static uint16_t VCP_DataRx (uint8_t* Buf, uint32_t Len)
   {
 	  if(127 < Buf[i])
 	  {
+		  serialBytesAvailable = 0;
+		  serialData = 0;
 		  continue;
 	  }
-	  uint8_t channel = Buf[i];
-	  ++i;
-	  if(127 < Buf[i])
+
+	  switch(serialBytesAvailable)
 	  {
-		  continue;
+	  case 0:
+		  serialData = ((uint32_t)Buf[i]) << 14;
+	  case 1:
+  		  serialData |= ((uint32_t)Buf[i]) << 7;
+	  case 2:
+		  serialData |= ((uint32_t)Buf[i]);
+		  serialInput[serialData >> 16] = serialData & 0x4FFF;
 	  }
-	  int16_t val = ((int16_t)Buf[i]) << 7;
-	  ++i;
-	  if(127 < Buf[i])
-	  {
-		  continue;
-	  }
-	  val += (int16_t)Buf[i];
-	  serialInput[channel] = val;
+	  serialBytesAvailable = (serialBytesAvailable + 1) %3;
   }  
 #endif
 

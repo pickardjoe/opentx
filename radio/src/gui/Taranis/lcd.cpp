@@ -687,8 +687,10 @@ void putsMixerSource(coord_t x, coord_t y, uint32_t idx, LcdFlags att)
     lcd_putsiAtt(x, y, STR_VSRCRAW, idx-MIXSRC_Rud+1, att);
   else if (idx <= MIXSRC_LAST_LOGICAL_SWITCH)
     putsSwitches(x, y, SWSRC_SW1+idx-MIXSRC_SW1, att);
-  else if (idx < MIXSRC_CH1)
+  else if (idx < MIXSRC_FIRST_SERIAL)
     putsStrIdx(x, y, STR_PPM_TRAINER, idx-MIXSRC_FIRST_TRAINER+1, att);
+  else if (idx < MIXSRC_CH1)
+	  putsStrIdx(x, y, STR_SERIAL_INPUT, idx-MIXSRC_FIRST_SERIAL+1, att);
   else if (idx <= MIXSRC_LAST_CH) {
     putsStrIdx(x, y, STR_CH, idx-MIXSRC_CH1+1, att);
     if (ZEXIST(g_model.limitData[idx-MIXSRC_CH1].name) && (att & STREXPANDED)) {

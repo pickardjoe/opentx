@@ -43,7 +43,8 @@
 
 // Serial input channels
 extern int16_t serialInput[NUM_SERIAL];
-
+extern int8_t serialBytesAvailable;
+extern int32_t serialData;
 // // Timer gets decremented in per10ms()
 // #define SERIAL_IN_VALID_TIMEOUT 100 // 1s
 // extern uint8_t serialInputValidityTimer;

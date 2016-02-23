@@ -487,6 +487,7 @@ extern const pm_char STR_TMIXMAXMS[];
 extern const pm_char STR_FREESTACKMINB[];
 extern const pm_char STR_MENUTORESET[];
 extern const pm_char STR_PPM_TRAINER[];
+extern const pm_char STR_SERIAL_INPUT[];
 extern const pm_char STR_CH[];
 extern const pm_char STR_MODEL[];
 extern const pm_char STR_FP[];

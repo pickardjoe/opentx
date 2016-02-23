@@ -37,6 +37,10 @@
 #include "serial_input.h"
 
 int16_t serialInput[NUM_SERIAL];
+
+int8_t serialBytesAvailable = 0;
+
+int32_t serialData = 0;
 // uint8_t ppmInputValidityTimer;
 
 
