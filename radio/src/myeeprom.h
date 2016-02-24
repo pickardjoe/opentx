@@ -121,7 +121,9 @@
   #define MAX_SCRIPTS          7
   #define MAX_INPUTS           32
   #define NUM_TRAINER          16
-  #define NUM_SERIAL           16
+  #if defined(USB_CONTROL)
+    #define NUM_SERIAL         16
+  #endif
   #if defined(REV9E)
     #define NUM_POTS           8
     #define NUM_XPOTS          4
