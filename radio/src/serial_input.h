@@ -61,12 +61,12 @@ extern Fifo<1024> serialInputFifo;
 
 inline void processSerialInput()
 {
-	const uint8_t serialInputStartPattern = 181
+	const uint8_t serialInputStartPattern = 181;
 	static uint32_t serialDataBuffer = 0;
 	static uint8_t serialDataStage = 0;
 	uint8_t c;
 
-	while (!serialInputFifo.pop(c))
+	while (serialInputFifo.pop(c))
 	{
 		if(0 == serialDataStage)
 		{
@@ -77,10 +77,10 @@ inline void processSerialInput()
 			}
 			continue;
 		}
-		serialDataBuffer |= c << (32 - 8*serialDataStage);
+		serialDataBuffer |= c << (24 - 8*serialDataStage);
 		if(2 < serialDataStage)
 		{
-			serialInput[serialDataBuffer >> 24] = serialDataBuffer & 0xFFFF;
+			serialInput[serialDataBuffer >> 24] = (serialDataBuffer & 0xFFFF) - 1024;
 			serialDataStage = 0;
 		}
 		else

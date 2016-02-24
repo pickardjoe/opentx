@@ -2,20 +2,31 @@ import sys, struct, time
 import serial
 
 class TxControl:
-    MAX_VALUE =0b1111111
+    MAX_VALUE =0xFF
     RESET_VALUE = 181
     def SendChannel(self, channel, value):
         value = value + 1024
         value = int(value) % 2049
-	self.conn.write(struct.pack('B', TxControl.RESET_VALUE))
-	self.conn.write(struct.pack('B', channel & TxControl.MAX_VALUE))
-	self.conn.write(struct.pack('B', (value >> 7) & TxControl.MAX_VALUE))
-	self.conn.write(struct.pack('B', value & TxControl.MAX_VALUE))
+        send = []
+        send.append(TxControl.RESET_VALUE)
+        send.append(channel & TxControl.MAX_VALUE)
+        send.append((value >> 8) & TxControl.MAX_VALUE)
+        send.append(value & TxControl.MAX_VALUE)
+
+        for data in send:
+            self.conn.write(struct.pack('B', data))
+            print(data)
+
         print("Sent %d to channel %d" % (value, channel))
-      	print(TxControl.RESET_VALUE)
-	print(channel & TxControl.MAX_VALUE)
-	print((value >> 7) & TxControl.MAX_VALUE)
-	print(value & TxControl.MAX_VALUE)
+        
+	# self.conn.write(struct.pack('B', TxControl.RESET_VALUE))
+	# self.conn.write(struct.pack('B', channel & TxControl.MAX_VALUE))
+	# self.conn.write(struct.pack('B', (value >> 8) & TxControl.MAX_VALUE))
+	# self.conn.write(struct.pack('B', value & TxControl.MAX_VALUE))
+      	# print(TxControl.RESET_VALUE)
+	# print(channel & TxControl.MAX_VALUE)
+	# print((value >> 8) & TxControl.MAX_VALUE)
+	# print(value & TxControl.MAX_VALUE)
 
 
     def __init__(self, device, baud):
@@ -29,7 +40,15 @@ class TxControl:
 #     conn.write(struct.pack('B', 64))
 #     conn.write(struct.pack('B', 64))
 #     time.sleep(0.5)
-ctl = TxControl(sys.argv[1], sys.argv[2])
-while True:
-    ctl.SendChannel(0, float(sys.argv[3]))
-    time.sleep(0.001)
+ctl = TxControl(sys.argv[1], 115200)
+#while True:
+channel = 0
+position = 0
+if 3 < len(sys.argv):
+    channel = int(sys.argv[2])
+    position = float(sys.argv[3])
+else:
+    position = float(sys.argv[2])
+    
+ctl.SendChannel(channel, position)
+#    time.sleep(0.001)

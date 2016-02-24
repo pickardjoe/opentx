@@ -37,7 +37,7 @@
 #include "serial_input.h"
 
 int16_t serialInput[NUM_SERIAL];
-Fifo<256> serialInputFifo;
+Fifo<1024> serialInputFifo;
 int8_t serialBytesAvailable = 0;
 
 int32_t serialData = 0;
