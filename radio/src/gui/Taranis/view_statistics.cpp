@@ -36,6 +36,7 @@
 
 #include "../../opentx.h"
 #include "../../timers.h"
+#include "../../serial_input.h"
 
 #define STATS_1ST_COLUMN               FW/2
 #define STATS_2ND_COLUMN               12*FW+FW/2
@@ -260,7 +261,5 @@ void menuTraceBuffer(uint8_t event)
     }
 
   }
-
-
 }
 #endif //#if defined(DEBUG_TRACE_BUFFER)
