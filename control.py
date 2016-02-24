@@ -3,10 +3,10 @@ import serial
 
 class TxControl:
     MAX_VALUE =0b1111111
-    RESET_VALUE = 0b11111111
+    RESET_VALUE = 181
     def SendChannel(self, channel, value):
         value = value + 1024
-        value = int(value) % 2048
+        value = int(value) % 2049
 	self.conn.write(struct.pack('B', TxControl.RESET_VALUE))
 	self.conn.write(struct.pack('B', channel & TxControl.MAX_VALUE))
 	self.conn.write(struct.pack('B', (value >> 7) & TxControl.MAX_VALUE))

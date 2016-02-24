@@ -38,6 +38,7 @@
 #define serial_input_h
 
 #include "myeeprom.h"
+#include "fifo.h"
 
 #define NUM_SERIAL 16
 
@@ -45,7 +46,7 @@
 extern int16_t serialInput[NUM_SERIAL];
 extern int8_t serialBytesAvailable;
 extern int32_t serialData;
-extern Fifo<256> serialInputFifo;
+extern Fifo<1024> serialInputFifo;
 // // Timer gets decremented in per10ms()
 // #define SERIAL_IN_VALID_TIMEOUT 100 // 1s
 // extern uint8_t serialInputValidityTimer;
@@ -58,13 +59,34 @@ extern Fifo<256> serialInputFifo;
 // #define checkSerialSignalWarning()
 // #endif
 
-void processSerialInput()
+inline void processSerialInput()
 {
+	const uint8_t serialInputStartPattern = 181
+	static uint32_t serialDataBuffer = 0;
+	static uint8_t serialDataStage = 0;
 	uint8_t c;
 
 	while (!serialInputFifo.pop(c))
 	{
-		CoTickDelay(10); // 20ms
+		if(0 == serialDataStage)
+		{
+			if(c == serialInputStartPattern)
+			{
+				serialDataStage = 1;
+				serialDataBuffer = 0;
+			}
+			continue;
+		}
+		serialDataBuffer |= c << (32 - 8*serialDataStage);
+		if(2 < serialDataStage)
+		{
+			serialInput[serialDataBuffer >> 24] = serialDataBuffer & 0xFFFF;
+			serialDataStage = 0;
+		}
+		else
+		{
+			++serialDataStage;
+		}
 	}
 }
 // // Needs to be inlined to avoid slow function calls in ISR routines
