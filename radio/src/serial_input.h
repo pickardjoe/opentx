@@ -80,7 +80,7 @@ inline void processSerialInput()
 		serialDataBuffer |= c << (24 - 8*serialDataStage);
 		if(2 < serialDataStage)
 		{
-			serialInput[serialDataBuffer >> 24] = (serialDataBuffer & 0xFFFF) - 1024;
+			serialInput[serialDataBuffer >> 16] = (serialDataBuffer & 0xFFFF) - 1024;
 			serialDataStage = 0;
 		}
 		else

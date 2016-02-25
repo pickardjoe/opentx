@@ -5,6 +5,7 @@ class TxControl:
     MAX_VALUE =0xFF
     RESET_VALUE = 181
     def SendChannel(self, channel, value):
+        channel = int(channel) - 1
         value = value + 1024
         value = int(value) % 2049
         send = []
