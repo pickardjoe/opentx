@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import sys, struct, time
 # import pygame
 import serial
@@ -9,6 +10,10 @@ class TxControl:
     MAX_VALUE =0xFF
     RESET_VALUE = 181
     CHANNEL_COUNT=16
+
+    def DebugOut(self, msg):
+        if self.debug:
+            print(msg)
 
     def SendChannel(self, channel, value):
 	channel = int(channel) - 1
@@ -22,10 +27,10 @@ class TxControl:
 
 	for data in send:
 	    self.conn.write(struct.pack('B', data))
-	    print(data)
+	    self.DebugOut(data)
 
 	self.channelValues[channel] = value
-	print("Sent %d to channel %d" % (value, channel))
+	self.DebugOut("Sent %d to channel %d" % (value, channel))
 
 	# self.conn.write(struct.pack('B', TxControl.RESET_VALUE))
 	# self.conn.write(struct.pack('B', channel & TxControl.MAX_VALUE))
@@ -37,8 +42,8 @@ class TxControl:
 	# print(value & TxControl.MAX_VALUE)
 
     def SetChannel(self, channel, value):
-	if channel < len(channelValues):
-	    if value != channelValues[channel]:
+	if channel < len(self.channelValues):
+	    if value != self.channelValues[channel]:
 		self.SendChannel(channel, value)
 
     def _PrintUsage(cmd):
@@ -56,7 +61,7 @@ class TxControl:
 	elif cmd[0] in ["so", "setone"]:
             usage = [cmd[0], "CHANNEL#", "VALUE"]
 	    if 2 < len(cmd):
-		self.SendChannel(int(cmd[1]))
+		self.SetChannel(int(cmd[1]), int(cmd[2]))
 
 	    else:
 		TxControl._PrintUsage(usage)
@@ -80,11 +85,11 @@ class TxControl:
 		TxControl._PrintUsage(usage)
 
     def SendLoop(self):
-	endLoop = false
+	endLoop = False
 	while not endLoop:
 	    line = sys.stdin.readline()
 	    line = line.split(' ')
-            ProcessCommand(line)
+            self.ProcessCommand(line)
 
 #    def BindJoystick(self, sticknum):
 #	 pygame.joystick.init()
@@ -93,6 +98,7 @@ class TxControl:
 
     def __init__(self, device, baud):
 	self.channelValues = []
+        self.debug = False
 	for i in range(TxControl.CHANNEL_COUNT):
 	    self.channelValues.append(0)
 
@@ -112,6 +118,8 @@ class TxControl:
 #     time.sleep(0.5)
 if __name__ == "__main__":
     ctl = TxControl(sys.argv[1], 115200)
+    ctl.SendLoop()
+    exit(0)
     #while True:
     channel = 0
     position = 0
