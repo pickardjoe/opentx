@@ -16,14 +16,12 @@ class TxControl:
             print(msg)
 
     def SendChannel(self, channel, value):
-	channel = int(channel) - 1
-	value = value + 1024
-	value = int(value) % 2049
+	valueSend = int(value + 1024) % 2049
 	send = []
 	send.append(TxControl.RESET_VALUE)
-	send.append(channel & TxControl.MAX_VALUE)
-	send.append((value >> 8) & TxControl.MAX_VALUE)
-	send.append(value & TxControl.MAX_VALUE)
+	send.append((channel - 1) & TxControl.MAX_VALUE)
+	send.append((valueSend >> 8) & TxControl.MAX_VALUE)
+	send.append(valueSend & TxControl.MAX_VALUE)
 
 	for data in send:
 	    self.conn.write(struct.pack('B', data))
@@ -61,7 +59,10 @@ class TxControl:
 	elif cmd[0] in ["so", "setone"]:
             usage = [cmd[0], "CHANNEL#", "VALUE"]
 	    if 2 < len(cmd):
-		self.SetChannel(int(cmd[1]), int(cmd[2]))
+                try:
+                    self.SetChannel(int(cmd[1]), int(cmd[2]))
+                except:
+                    pass
 
 	    else:
 		TxControl._PrintUsage(usage)
@@ -100,7 +101,7 @@ class TxControl:
 	self.channelValues = []
         self.debug = False
 	for i in range(TxControl.CHANNEL_COUNT):
-	    self.channelValues.append(0)
+	    self.channelValues.append(None)
 
 	self.conn = serial.Serial(device, baud)
 
@@ -118,6 +119,7 @@ class TxControl:
 #     time.sleep(0.5)
 if __name__ == "__main__":
     ctl = TxControl(sys.argv[1], 115200)
+#    ctl.debug = True
     ctl.SendLoop()
     exit(0)
     #while True:
