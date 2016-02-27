@@ -66,5 +66,6 @@ int main()
 	{
 		rift->poll();
 		printf("so %d %d\n", (int)(rift->rotation[2]*1024), (int)(rift->rotation[1]*1024));
+		fflush(stdout);
 	}
 }
