@@ -421,9 +421,9 @@ void lcd_outdezNAtt(coord_t x, coord_t y, lcdint_t val, LcdFlags flags, uint8_t 
       }
       else if (smlsize) {
         x -= 2;
-        lcd_plot(x+1, y+5);
+        lcd_plot(x, y+5);
         if ((flags&INVERS) && ((~flags & BLINK) || BLINK_ON_PHASE)) {
-          lcd_vline(x+1, y, 7);
+          lcd_vline(x, y-1, 8);
         }
       }
       else if (tinsize) {
@@ -1045,6 +1045,7 @@ void lcd_plot(coord_t x, coord_t y, LcdFlags att)
 
 void lcd_hlineStip(coord_t x, coord_t y, coord_t w, uint8_t pat, LcdFlags att)
 {
+  if (w < 0) { x += w; w = -w; }
   if (y < 0 || y >= LCD_H) return;
   if (x+w > LCD_W) {
     if (x >= LCD_W ) return;

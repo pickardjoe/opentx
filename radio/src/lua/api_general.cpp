@@ -504,7 +504,7 @@ OpenTX 2.0:
 
 | Unit  | Sound | File (.wav) | Automatic conversion rules  |
 | --- | --- | --- | --- |
-| 0 |   |   |   |
+| 0 | --- | --- (no unit played) |   |
 | 1 | Volts | 116 |   |
 | 2 | Amps  | 118 |   |
 | 3 | Meters per Second | 120 |   |
@@ -530,7 +530,8 @@ OpenTX 2.0:
 OpenTX 2.1:
 
 | 2.1 Unit  | Sound | Sound File (.wav) |   
-| --- | --- | --- |   
+| --- | --- | --- | --- | 
+| 0 | --- | --- (no unit played) |   |
 | 1 | Volts | 116 |   
 | 2 | Amps  | 118 |   
 | 3 | Milliamps | 120 |   
@@ -582,7 +583,7 @@ Play a time value (text to speech)
 static int luaPlayDuration(lua_State *L)
 {
   int duration = luaL_checkinteger(L, 1);
-  bool playTime = (luaL_checkinteger(L, 2) != 0);
+  bool playTime = (luaL_optinteger(L, 2, 0) != 0);
   playDuration(duration, playTime ? PLAY_TIME : 0, 0);
   return 0;
 }
