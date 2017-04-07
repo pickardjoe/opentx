@@ -1,0 +1,17 @@
+{
+    "name": "TxControl.js",
+    "version": "1.0.0",
+    "description": "A module for interacting with OpenTX compatible radios using javascript.",
+    "main": "TxControl.js",
+    "dependencies": {
+        "keypress": "^0.2.1",
+        "node-mouse": "0.0.2",
+        "serialport": "^3.0.0"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Joseph Pickard",
+    "license": "All Rights Reserved"
+}
