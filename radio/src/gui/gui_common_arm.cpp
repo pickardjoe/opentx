@@ -249,7 +249,7 @@ bool isInputSourceAvailable(int source)
     return true;
 
 #if defined(USB_CONTROL)
-  if (source>=MIXSRC_FIRST_SERIAL && source<=MIXSRC_LAST_SERIAL)
+  if (source>=MIXSRC_FIRST_USB && source<=MIXSRC_LAST_USB)
 	  return true;
 #endif
 

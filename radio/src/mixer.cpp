@@ -424,9 +424,8 @@ getvalue_t getValue(mixsrc_t i)
   }
 
 #if defined(USB_CONTROL)
-  else if (i<=MIXSRC_LAST_SERIAL) {
-	  processSerialInput();
-	  return serialInput[i-MIXSRC_FIRST_SERIAL];
+  else if (i<=MIXSRC_LAST_USB) {
+	  return usbInput[i-MIXSRC_FIRST_USB];
   }
 #endif
 

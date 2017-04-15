@@ -24,6 +24,10 @@
 #include <malloc.h>
 #include <new>
 
+#if defined(USB_CONTROL)
+  include "usb_input.h"
+#endif
+
 #define CLI_COMMAND_MAX_ARGS           8
 #define CLI_COMMAND_MAX_LEN            256
 
@@ -803,6 +807,18 @@ const MemArea memAreas[] = {
   { NULL, NULL, 0 },
 };
 
+#if defined(USB_CONTROL)
+int cliSendChannel(const char ** argv)
+{
+  int channel;
+  int value;
+  if(toInt(argv, 1, &channel) && 0 < channel && toInt(argv, 2, &value)) {
+    usbInput[channel - 1] = value;
+  }
+  return 0;
+}
+#endif
+
 int cliSet(const char ** argv)
 {
   if (!strcmp(argv[1], "rtc")) {
@@ -1216,6 +1232,9 @@ const CliCommand cliCommands[] = {
   { "print", cliDisplay, "<address> [<size>] | <what>" },
   { "p", cliDisplay, "<address> [<size>] | <what>" },
   { "reboot", cliReboot, "[wdt]" },
+#if defined(USB_CONTROL)
+  { "sc", cliSendChannel, "<channel> <value>" },
+#endif
   { "set", cliSet, "<what> <value>" },
   { "stackinfo", cliStackInfo, "" },
   { "meminfo", cliMemoryInfo, "" },
