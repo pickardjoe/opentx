@@ -798,6 +798,9 @@
 
 #define TR_MENUTORESET         CENTER TR_ENTER " >> Reset"
 #define TR_PPM_TRAINER         "TR"
+#if defined(USB_CONTROL)
+#define TR_USB_INPUT           "USB"
+#endif
 #define TR_CH                  "KN"
 #define TR_MODEL               "MODEL"
 #define TR_FP                  "FL"
@@ -1305,6 +1308,9 @@
 #define TR_MENU_SWITCHES       "\312Przełczn"
 #define TR_MENU_LOGICAL_SWITCHES "\312Przełączn.Logicz"
 #define TR_MENU_TRAINER        "\317Trener "
+#if defined(USB_CONTROL)
+#define TR_MENU_USB            "USB"
+#endif
 #define TR_MENU_CHANNELS       "\320Kanały  "
 #define TR_MENU_GVARS          "\311ZmGlo"
 #define TR_MENU_TELEMETRY      "\321Telemetry"

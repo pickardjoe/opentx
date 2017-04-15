@@ -378,6 +378,11 @@ char * getSourceString(char * dest, mixsrc_t idx)
   else if (idx <= MIXSRC_LAST_TRAINER) {
     strAppendStringWithIndex(dest, STR_PPM_TRAINER, idx - MIXSRC_FIRST_TRAINER + 1);
   }
+#if defined(USB_CONTROL)
+  else if (idx <= MIXSRC_LAST_USB) {
+    strAppendStringWithIndex(dest, STR_USB_INPUT, idx - MIXSRC_FIRST_USB + 1);
+  }
+#endif
   else if (idx <= MIXSRC_LAST_CH) {
     strAppendStringWithIndex(dest, STR_CH, idx - MIXSRC_CH1 + 1);
   }

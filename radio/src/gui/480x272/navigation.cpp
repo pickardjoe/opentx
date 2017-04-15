@@ -55,6 +55,11 @@ void onSourceLongEnterPress(const char * result)
     checkIncDecSelection = MIXSRC_FIRST_SWITCH;
   else if (result == STR_MENU_TRAINER)
     checkIncDecSelection = MIXSRC_FIRST_TRAINER;
+#if defined(USB_CONTROL)
+  else if (result == STR_MENU_USB)
+    checkIncDecSelection = MIXSRC_FIRST_USB;
+#endif
+#endif
   else if (result == STR_MENU_CHANNELS)
     checkIncDecSelection = getFirstAvailable(MIXSRC_FIRST_CH, MIXSRC_LAST_CH, isSourceAvailable);
   else if (result == STR_MENU_GVARS)
@@ -217,7 +222,10 @@ int checkIncDec(event_t event, int val, int i_min, int i_max, unsigned int i_fla
       if (i_min <= MIXSRC_FIRST_TRIM && i_max >= MIXSRC_FIRST_TRIM)        POPUP_MENU_ADD_ITEM(STR_MENU_TRIMS);
       if (i_min <= MIXSRC_FIRST_SWITCH && i_max >= MIXSRC_FIRST_SWITCH)    POPUP_MENU_ADD_ITEM(STR_MENU_SWITCHES);
       if (i_min <= MIXSRC_FIRST_TRAINER && i_max >= MIXSRC_FIRST_TRAINER)  POPUP_MENU_ADD_ITEM(STR_MENU_TRAINER);
-      if (i_min <= MIXSRC_FIRST_CH && i_max >= MIXSRC_FIRST_CH)            POPUP_MENU_ADD_ITEM(STR_MENU_CHANNELS);
+#if defined(USB_CONTROL)
+      if (i_min <= MIXSRC_FIRST_USB && i_max >= MIXSRC_FIRST_USB)  POPUP_MENU_ADD_ITEM(STR_MENU_USB);
+#endif
+	  if (i_min <= MIXSRC_FIRST_CH && i_max >= MIXSRC_FIRST_CH)            POPUP_MENU_ADD_ITEM(STR_MENU_CHANNELS);
       if (i_min <= MIXSRC_FIRST_GVAR && i_max >= MIXSRC_FIRST_GVAR && isValueAvailable(MIXSRC_FIRST_GVAR)) {
         POPUP_MENU_ADD_ITEM(STR_MENU_GVARS);
       }

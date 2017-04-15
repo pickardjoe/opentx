@@ -784,6 +784,9 @@
 
 #define TR_MENUTORESET         CENTER TR_ENTER" voor Reset"
 #define TR_PPM_TRAINER         "TR"
+#if defined(USB_CONTROL)
+#define TR_USB_INPUT           "USB"
+#endif
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODEL"
 #define TR_FP                  "FM"
@@ -1299,6 +1302,9 @@
 #define TR_MENU_SWITCHES       "\312Schakelaars"
 #define TR_MENU_LOGICAL_SWITCHES "\312Log. Schakelaars"
 #define TR_MENU_TRAINER        "\317Trainer"
+#if defined(USB_CONTROL)
+#define TR_MENU_USB            "USB"
+#endif
 #define TR_MENU_CHANNELS       "\320Kanalen"
 #define TR_MENU_GVARS          "\311GVars"
 #define TR_MENU_TELEMETRY      "\321Telemetrie"

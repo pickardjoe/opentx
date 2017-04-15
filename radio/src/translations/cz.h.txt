@@ -783,6 +783,9 @@
 
 #define TR_MENUTORESET         CENTER TR_ENTER" >> Reset"
 #define TR_PPM_TRAINER         "TR"
+#if defined(USB_CONTROL)
+#define TR_USB_INPUT           "USB"
+#endif
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODEL"
 #define TR_FP                  "LR"
@@ -1295,6 +1298,9 @@
 #define TR_MENU_SWITCHES       "\312Spínače"
 #define TR_MENU_LOGICAL_SWITCHES "\312Logické spínače"
 #define TR_MENU_TRAINER        "\317Trenér"
+#if defined(USB_CONTROL)
+#define TR_MENU_USB            "USB"
+#endif
 #define TR_MENU_CHANNELS       "\320Kanály"
 #define TR_MENU_GVARS          "\311Glob.proměnné"
 #define TR_MENU_TELEMETRY      "\321Telemetrie"

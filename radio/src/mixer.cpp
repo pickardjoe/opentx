@@ -41,6 +41,10 @@ uint8_t mixWarning;
   uint8_t startupWarningState;
 #endif
 
+#if defined(USB_CONTROL)
+#include "serial_input.h"
+#endif
+
 int16_t calibratedAnalogs[NUM_CALIBRATED_ANALOGS];
 int16_t channelOutputs[MAX_OUTPUT_CHANNELS] = {0};
 int16_t ex_chans[MAX_OUTPUT_CHANNELS] = {0}; // Outputs (before LIMITS) of the last perMain;
@@ -418,6 +422,13 @@ getvalue_t getValue(mixsrc_t i)
   else if (i <= MIXSRC_LAST_CH) {
     return ex_chans[i-MIXSRC_CH1];
   }
+
+#if defined(USB_CONTROL)
+  else if (i<=MIXSRC_LAST_SERIAL) {
+	  processSerialInput();
+	  return serialInput[i-MIXSRC_FIRST_SERIAL];
+  }
+#endif
 
 #if defined(GVARS)
   else if (i <= MIXSRC_LAST_GVAR) {

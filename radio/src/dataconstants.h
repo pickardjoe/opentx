@@ -101,6 +101,10 @@
   #define MAX_TELEMETRY_SENSORS        0
 #endif
 
+#if defined(USB_CONTROL)
+  #define NUM_USB_CONTROL 16
+#endif
+
 #if defined(CPUARM)
   #define MAX_TIMERS                   3
 #else

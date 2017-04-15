@@ -805,6 +805,9 @@
 
 #define TR_MENUTORESET         CENTER TR_ENTER " Nollar"
 #define TR_PPM_TRAINER         "TR"
+#if defined(USB_CONTROL)
+#define TR_USB_INPUT           "USB"
+#endif
 #define TR_CH                  "KN"
 #define TR_MODEL               "Modell"
 #define TR_FP                  "FL"
@@ -1312,6 +1315,9 @@
 #define TR_MENU_SWITCHES       "\312Brytare"
 #define TR_MENU_LOGICAL_SWITCHES "\312Logiska Brytare"
 #define TR_MENU_TRAINER        "\317Trainer"
+#if defined(USB_CONTROL)
+#define TR_MENU_USB            "USB"
+#endif
 #define TR_MENU_CHANNELS       "\320Servon"
 #define TR_MENU_GVARS          "\311GVars"
 #define TR_MENU_TELEMETRY      "\321Telemetri"
