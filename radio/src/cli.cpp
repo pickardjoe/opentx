@@ -25,7 +25,7 @@
 #include <new>
 
 #if defined(USB_CONTROL)
-  include "usb_input.h"
+  #include "usb_input.h"
 #endif
 
 #define CLI_COMMAND_MAX_ARGS           8
@@ -808,12 +808,24 @@ const MemArea memAreas[] = {
 };
 
 #if defined(USB_CONTROL)
-int cliSendChannel(const char ** argv)
-{
+int cliSendChannel(const char ** argv) {
   int channel;
   int value;
-  if(toInt(argv, 1, &channel) && 0 < channel && toInt(argv, 2, &value)) {
-    usbInput[channel - 1] = value;
+  if(0 < toInt(argv, 1, &channel) && 0 < toInt(argv, 2, &value)) {
+    if(0 < channel && channel <= MAX_USB_CHANNELS) {
+      if(value >=-1024 && value <= 1024) {
+         usbInput[channel - 1] = value;
+      }
+      else {
+	 serialPrint("Value must be between -1024 and 1024.");
+      }
+    }
+    else {
+      serialPrint("Channel must be between 1 and %d.", MAX_USB_CHANNELS);
+    }
+  }
+  else {
+    serialPrint("Invalid integer provided for channel or value.");
   }
   return 0;
 }

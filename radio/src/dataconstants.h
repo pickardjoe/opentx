@@ -102,7 +102,7 @@
 #endif
 
 #if defined(USB_CONTROL)
-  #define NUM_USB_CONTROL 16
+  #define MAX_USB_CHANNELS 16
 #endif
 
 #if defined(CPUARM)

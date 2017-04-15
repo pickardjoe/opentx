@@ -59,7 +59,6 @@ void onSourceLongEnterPress(const char * result)
   else if (result == STR_MENU_USB)
     checkIncDecSelection = MIXSRC_FIRST_USB;
 #endif
-#endif
   else if (result == STR_MENU_CHANNELS)
     checkIncDecSelection = getFirstAvailable(MIXSRC_FIRST_CH, MIXSRC_LAST_CH, isSourceAvailable);
   else if (result == STR_MENU_GVARS)

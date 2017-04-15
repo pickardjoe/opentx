@@ -154,20 +154,15 @@ TxControl.prototype.OnTelemetry = function(handler) {
  */
 TxControl.prototype._SendChannel = function(channel, value, resolve, reject) {
     var ctl = this;
-    this.DebugOut("t2", "debug");
     if (value < -1024 || value > 1024) {
         reject(new RangeError("_SendChannel: value must be between -1024 and 1024"));
     }
-    var valueSend = Math.floor(value + 1024);
-    var send = new Buffer(4);
-
-    send[0] = this.RESET_VALUE;
-    send[1] = ((channel - 1) & this.MAX_VALUE);
-    send[2] = ((valueSend >> 8) & this.MAX_VALUE);
-    send[3] = (valueSend & this.MAX_VALUE);
+	
     var success;
+	let send = ['sc', channel, value].join(' ');
+	console.log(send);
     try {
-        this.port.write(send,
+        this.port.write(send + '\n',
             function() {
                 success = true;
                 ctl._channelValues[channel] = value;
@@ -323,7 +318,7 @@ TxControl.prototype.ProcessCommand = function(cmd) {
                 return "ERROR: " + e;
             }
         } else {
-            TxControl._PrintUsage(usage);
+            this._PrintUsage(usage);
             return "DID NOT SET ONE";
         }
     } else if (-1 !== ["sm", "setmultiple"].indexOf(cmd[0])) {

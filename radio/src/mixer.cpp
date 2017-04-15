@@ -42,7 +42,7 @@ uint8_t mixWarning;
 #endif
 
 #if defined(USB_CONTROL)
-#include "serial_input.h"
+#include "usb_input.h"
 #endif
 
 int16_t calibratedAnalogs[NUM_CALIBRATED_ANALOGS];
@@ -419,16 +419,16 @@ getvalue_t getValue(mixsrc_t i)
     }
     return x*2;
   }
-  else if (i <= MIXSRC_LAST_CH) {
-    return ex_chans[i-MIXSRC_CH1];
-  }
 
 #if defined(USB_CONTROL)
-  else if (i<=MIXSRC_LAST_USB) {
+  else if (i <= MIXSRC_LAST_USB) {
 	  return usbInput[i-MIXSRC_FIRST_USB];
   }
 #endif
-
+  
+  else if (i <= MIXSRC_LAST_CH) {
+    return ex_chans[i-MIXSRC_CH1];
+  }
 #if defined(GVARS)
   else if (i <= MIXSRC_LAST_GVAR) {
     return GVAR_VALUE(i-MIXSRC_GVAR1, getGVarFlightMode(mixerCurrentFlightMode, i - MIXSRC_GVAR1));

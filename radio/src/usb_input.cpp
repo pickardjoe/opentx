@@ -1,3 +1,3 @@
 #include "usb_input.h"
 
-int16_t usbInput[NUM_USB_CONTROL];
+int16_t usbInput[MAX_USB_CHANNELS] = {0};
