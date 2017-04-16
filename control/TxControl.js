@@ -54,14 +54,8 @@ function TxControl(serialPort, baudRate, onOpened, telemetry) {
  * @param {Buffer} rawData - The raw data.
  */
 TxControl.prototype._ProcessDataReceived = function(rawData) {
-    var ctl = this;
     this.DebugOut('Serial Data received.', 'debug');
-    var dataType = rawData.readUInt8(0);
-    if (dataType === 77) {
-        ctl._ProcessTelemetry(rawData);
-    } else if (dataType === 137) {
-        ctl._DebugOut(rawData, "serial");
-    }
+    this.DebugOut(rawData, "serial");
 };
 
 /**
