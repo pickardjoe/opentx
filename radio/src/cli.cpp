@@ -26,6 +26,7 @@
 
 #if defined(USB_CONTROL)
   #include "usb_input.h"
+  #include "telemetry/telemetry_sensors.h"
 #endif
 
 #define CLI_COMMAND_MAX_ARGS           8
@@ -808,6 +809,7 @@ const MemArea memAreas[] = {
 };
 
 #if defined(USB_CONTROL)
+
 int cliSendChannel(const char ** argv) {
   int channel;
   int value;
@@ -826,6 +828,23 @@ int cliSendChannel(const char ** argv) {
   }
   else {
     serialPrint("Invalid integer provided for channel or value.");
+  }
+  return 0;
+}
+
+int cliGetTelemetry(const char ** argv) {
+  int index;
+  if(0 < toInt(argv, 1, &index)) {
+    if(0 <= index && index <= MAX_TELEMETRY_SENSORS) {
+      TelemetryItem & item = telemetryItems[index];
+	  serialPrint("tlm: %d, %d", index, item.value);		
+    }
+    else {
+      serialPrint("Sensor index must be between 0 and %d.", MAX_TELEMETRY_SENSORS);
+    }
+  }
+  else {
+    serialPrint("Invalid integer provided for telemetry sensor index.");
   }
   return 0;
 }
@@ -1246,6 +1265,7 @@ const CliCommand cliCommands[] = {
   { "reboot", cliReboot, "[wdt]" },
 #if defined(USB_CONTROL)
   { "sc", cliSendChannel, "<channel> <value>" },
+  { "gt", cliGetTelemetry, "<index>" },
 #endif
   { "set", cliSet, "<what> <value>" },
   { "stackinfo", cliStackInfo, "" },
