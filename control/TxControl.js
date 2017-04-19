@@ -51,22 +51,28 @@ function TxControl(serialPort, baudRate, onOpened, telemetry) {
 
 /**
  * Called when data is received from the radio.
- * @param {Buffer} rawData - The raw data.
+ * @param {Buffer} line - The line of data recieved.
  */
-TxControl.prototype._ProcessDataReceived = function(rawData) {
-    this.DebugOut('Serial Data received.', 'debug');
-    this.DebugOut(rawData, "serial");
+TxControl.prototype._ProcessLineReceived = function(line) {
+    this.DebugOut(line, "serial");
+    let matches;
+    if ((matches = />tlm: (-?\d), (-?\d)'/.exec(line))) {
+        this._emitter.emit('telemetry', {
+            id: parseInt(matches[0]),
+            value: parseInt(matches[1])
+        });
+    }
 };
 
 /**
  * Called when telemetry data is received.
- * @param {Buffer} rawData - The raw telemetry data.
+ * @param {Buffer} line - The line of telemetry data recieved.
  */
-TxControl.prototype._ProcessTelemetry = function(rawData) {
+TxControl.prototype._ProcessTelemetry = function(line) {
     if (!this._useTelemetry) {
         return;
     }
-    var telemetryData = new TxControlTelemetry(rawData);
+    var telemetryData = new TxControlTelemetry(line);
     this._emitter.emit("telemetry", telemetryData);
 };
 
@@ -81,15 +87,15 @@ TxControl.prototype.Start = function(onOpened) {
         dataBits: 8,
         parity: 'none',
         stopBits: 1,
-        parser: serialport.parsers.raw
+        parser: serialport.parsers.readline('\n')
     }, function() {
         if (onOpened) {
             onOpened(ctl);
         }
     });
     if (this._useRead) {
-        this.port.on("data", function(rawData) {
-            ctl._ProcessDataReceived(rawData);
+        this.port.on("data", function(line) {
+            ctl._ProcessDataReceived(line);
         });
     }
 };
@@ -151,10 +157,10 @@ TxControl.prototype._SendChannel = function(channel, value, resolve, reject) {
     if (value < -1024 || value > 1024) {
         reject(new RangeError("_SendChannel: value must be between -1024 and 1024"));
     }
-	
+
     var success;
-	let send = ['sc', channel, value].join(' ');
-	console.log(send);
+    let send = ['sc', channel, value].join(' ');
+    console.log(send);
     try {
         this.port.write(send + '\n',
             function() {
