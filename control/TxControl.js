@@ -32,6 +32,8 @@ function TxControl(serialPort, baudRate, onOpened, telemetry) {
 
     this._emitter = new events.EventEmitter();
 
+    this.on = this._emitter.on;
+
     if (undefined === telemetry || telemetry) {
         this._useTelemetry = true;
         if ("function" === typeof(telemetry)) {
@@ -55,12 +57,8 @@ function TxControl(serialPort, baudRate, onOpened, telemetry) {
  */
 TxControl.prototype._ProcessLineReceived = function(line) {
     this.DebugOut(line, "serial");
-    let matches;
-    if ((matches = />tlm: (-?\d), (-?\d)'/.exec(line))) {
-        this._emitter.emit('telemetry', {
-            id: parseInt(matches[0]),
-            value: parseInt(matches[1])
-        });
+    if (/^tlm:/.exec(line)) {
+        this._ProcessTelemetry(line);
     }
 };
 
@@ -74,6 +72,26 @@ TxControl.prototype._ProcessTelemetry = function(line) {
     }
     var telemetryData = new TxControlTelemetry(line);
     this._emitter.emit("telemetry", telemetryData);
+};
+
+TxControl.prototype.GetTelemetry = function(id) {
+    let txc = this;
+    return new Promise(function(resolve, reject) {
+        if (id <= 0) {
+            return reject({
+                error: 'Id must be at least 1.'
+            });
+        }
+
+        function gtTmp(tlmData) {
+            if (tlmData.id === id) {
+                txc._emitter.removeListener('telemetry', gtTmp);
+                resolve(tlmData);
+            }
+        }
+        txc._emitter.on('telemetry', gtTmp);
+        txc.port.write(['gt', id - 1].join(' ') + '\n');
+    });
 };
 
 /**
@@ -95,7 +113,7 @@ TxControl.prototype.Start = function(onOpened) {
     });
     if (this._useRead) {
         this.port.on("data", function(line) {
-            ctl._ProcessDataReceived(line);
+            ctl._ProcessLineReceived(line);
         });
     }
 };
