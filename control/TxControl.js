@@ -48,7 +48,7 @@ function TxControl(serialPort, baudRate, onOpened, telemetry) {
     }
 
 
-    this.Start(onOpened);
+    this.Start().then(onOpened);
 }
 
 /**
@@ -98,24 +98,28 @@ TxControl.prototype.GetTelemetry = function(id) {
  * Opens a connection to the radio.
  * @param {txControlCreatedOpenedCallback} onOpened - Run after the connection is opened.
  */
-TxControl.prototype.Start = function(onOpened) {
-    var ctl = this;
-    this.port = new SerialPort(ctl._serialPort, {
-        baudRate: ctl._baudRate,
-        dataBits: 8,
-        parity: 'none',
-        stopBits: 1,
-        parser: serialport.parsers.readline('\n')
-    }, function() {
-        if (onOpened) {
-            onOpened(ctl);
+TxControl.prototype.Start = function() {
+    const ctl = this;
+    return new Promise(function(resolve, reject) {
+        ctl.port = new SerialPort(ctl._serialPort, {
+            baudRate: ctl._baudRate,
+            dataBits: 8,
+            parity: 'none',
+            stopBits: 1,
+            parser: serialport.parsers.readline('\n')
+        }, function(err) {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve();
+        });
+        if (ctl._useRead) {
+            ctl.port.on("data", function(line) {
+                ctl._ProcessLineReceived(line);
+            });
         }
     });
-    if (this._useRead) {
-        this.port.on("data", function(line) {
-            ctl._ProcessLineReceived(line);
-        });
-    }
 };
 
 /**
@@ -170,32 +174,31 @@ TxControl.prototype.OnTelemetry = function(handler) {
  * @param {reject} txControlReject - Run if the channel is not set sucessfully.
  * @returns {boolean} - True if we were able to successfully write to the port, false if writing failed, and undefined if we don't know yet.
  */
-TxControl.prototype._SendChannel = function(channel, value, resolve, reject) {
-    var ctl = this;
-    if (value < -1024 || value > 1024) {
-        reject(new RangeError("_SendChannel: value must be between -1024 and 1024"));
-    }
-
-    var success;
-    let send = ['sc', channel, value].join(' ');
-    console.log(send);
-    try {
-        this.port.write(send + '\n',
-            function() {
-                success = true;
-                ctl._channelValues[channel] = value;
-                ctl.DebugOut("Sent " + value + " to channel " + channel, "status");
-                if (resolve) {
-                    resolve();
-                }
-            });
-    } catch (e) {
-        if (reject) {
-            success = false;
-            reject(e);
+TxControl.prototype._SendChannel = function(channel, value) {
+    const ctl = this;
+    return new Promise(function(resolve, reject) {
+        if (value < -1024 || value > 1024) {
+            reject(new RangeError("_SendChannel: value must be between -1024 and 1024"));
+            return;
         }
-    }
-    return success;
+
+        let send = ['sc', channel, value].join(' ');
+        console.log(send);
+        try {
+            this.port.write(send + '\n',
+                function() {
+                    ctl._channelValues[channel] = value;
+                    ctl.DebugOut("Sent " + value + " to channel " + channel, "status");
+                    if (resolve) {
+                        resolve();
+                    }
+                });
+        } catch (e) {
+            if (reject) {
+                reject(e);
+            }
+        }
+    });
 };
 
 TxControl.prototype._GetChannelMap = function(channelIn) {
@@ -218,26 +221,22 @@ TxControl.prototype._GetChannelMap = function(channelIn) {
  * @param {reject} txControlReject - Run if the channel is not set sucessfully.
  * @returns {boolean} True, if the channel value was sent successfully, or wasn't sent because it hasn't changed, otherwise false.
  */
-TxControl.prototype.SetChannel = function(channel, value, resolve, reject) {
+TxControl.prototype.SetChannel = function(channel, value) {
     var channelMapped = this._GetChannelMap(channel);
 
     if (!channelMapped) {
-        return;
+        return Promise.reject(new Error(`Channel ${channel} not mapped.`));
     }
     if (0 > channelMapped) {
         channelMapped = -channelMapped;
         value = -value;
     }
     if (this.CHANNEL_COUNT < channelMapped) {
-        if (reject) {
-            reject(new RangeError("SetChannel: Mapped channel must be between 1 and " + this.CHANNEL_COUNT));
-        }
-        return false;
+        return Promise.reject(new RangeError("SetChannel: Mapped channel must be between 1 and " + this.CHANNEL_COUNT));
     }
     if (value != this._channelValues[channelMapped]) {
-        return this._SendChannel(channelMapped, value, resolve, reject);
+        return this._SendChannel(channelMapped, value);
     }
-    return true;
 };
 
 /**
@@ -247,17 +246,11 @@ TxControl.prototype.SetChannel = function(channel, value, resolve, reject) {
  * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
  */
 TxControl.prototype.Set = function(values, resolve, reject) {
-    var failed = [];
-    var channel;
-    var rejectL = function(e) {
-        failed.push(channel);
-        if (reject) {
-            reject(e);
-        }
-    };
-    for (channel in values) {
-        this.SetChannel(parseInt(channel), parseInt(values[channel]), resolve, rejectL);
+    const ps = [];
+    for (let channel in values) {
+        ps.push(this.SetChannel(parseInt(channel), parseInt(values[channel])));
     }
+    return Promise.all(ps);
 };
 
 /**
@@ -267,18 +260,12 @@ TxControl.prototype.Set = function(values, resolve, reject) {
  * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
  */
 TxControl.prototype.SetPercent = function(values, resolve, reject) {
-    var failed = [];
-    var channel;
-    var rejectL = function(e) {
-        failed.push(channel);
-        if (reject) {
-            reject(e);
-        }
-    };
-    for (channel in values) {
-        this.SetChannel(parseInt(channel), parseInt((parseFloat(values[channel])) * 1024 / 100), resolve, rejectL);
-        failed.push(channel);
+    const ps = [];
+    for (let channel in values) {
+        const p = this.SetChannel(parseInt(channel), parseInt((parseFloat(values[channel])) * 1024 / 100));
+        ps.push(p);
     }
+    return Promise.all(ps);
 };
 
 
