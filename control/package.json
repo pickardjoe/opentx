@@ -5,6 +5,7 @@
   "main": "TxControl.js",
   "dependencies": {
     "@reactivex/rxjs": "^5.4.3",
+    "express": "^4.15.4",
     "keypress": "^0.2.1",
     "node-mouse": "0.0.2",
     "rx": "^4.1.0",
