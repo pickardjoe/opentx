@@ -1,4 +1,6 @@
-import { Observable } from 'rxjs/Observable';
+import { Observable, Subscriber } from 'rxjs/Rx';
+import * as readline from 'readline';
+import * as _ from 'lodash';
 import * as  serialport from 'serialport';
 const SerialPort = serialport.SerialPort;
 
@@ -8,14 +10,24 @@ interface ChannelValueMap {
     [channel: number]: number;
 }
 
+interface ChannelMap {
+    [channel: number]: number;
+}
+
 export class TxControl {
     private readonly _channelCount: number = 16;
     private _serialPort: string;
     private debug: string[] = [];
     private _baudRate: number = 115200;
+    private _useRead: boolean = false;
+    private _useTelemetry: boolean = false;
 
-    private _channelValues:
-    /**
+    private _channelValues: ChannelValueMap = {};
+    private _serialData: Observable<string> = null;
+    private _port: any = null;
+    private _channelMap: ChannelMap = null;
+
+	/**
      * Creates a new TxControl instance for controlling an OpenTX radio.
      * @constructor 
      * @param {string} serialPort - The name of the serial port the OpenTX radio is plugged into.
@@ -23,442 +35,429 @@ export class TxControl {
      * @param {txControlCreatedOpenedCallback} onOpened - Run when the  serial port to the OpenTX radio is opened.
      * @param {boolean|undefined|txControlTelemetryReceivedCallback} onOpened - True, if telemetry should be enabled. A telemetry data callback can also be used.
      */
-    constructor(serialPort: any = null, baudRate, onOpened, telemetry) {
+    constructor(serialPort: string, baudRate: number = 115200, useTelemetry: boolean = true) {
         this._serialPort = serialPort;
         if (baudRate) {
             this._baudRate = baudRate;
         }
-        this._channelValues = {};
 
-        for (var i = 0; i < this._channelCount; ++i) {
-            this._channelValues[i] = null;
-        }
-
-        this._emitter = new events.EventEmitter();
-
-        this.on = this._emitter.on;
-
-        if (undefined === telemetry || telemetry) {
-            this._useTelemetry = true;
-            if ("function" === typeof (telemetry)) {
-                this._emitter.on('telemetry', telemetry);
-            }
-        } else {
-            this._useTelemetry = false;
-        }
+        this._useTelemetry = useTelemetry;
 
         if (this._useTelemetry) { // Check other read data types here.
             this._useRead = true;
         }
-
-
-        this.Start().then(onOpened);
     }
-}
 
-/**
- * Called when data is received from the radio.
- * @param {Buffer} line - The line of data recieved.
- */
-TxControl.prototype._ProcessLineReceived = function (line) {
-    this.DebugOut(line, "serial");
-    if (/^tlm:/.exec(line)) {
-        this._ProcessTelemetry(line);
+    public static create(serialPort: string, baudRate: number = 115200, useTelemetry: boolean = true): Observable<void> {
+        const txc = new TxControl(serialPort, baudRate, useTelemetry);
+        return txc.start();
     }
-};
 
-/**
- * Called when telemetry data is received.
- * @param {Buffer} line - The line of telemetry data recieved.
- */
-TxControl.prototype._ProcessTelemetry = function (line) {
-    if (!this._useTelemetry) {
-        return;
-    }
-    var telemetryData = new TxControlTelemetry(line);
-    this._emitter.emit("telemetry", telemetryData);
-};
-
-TxControl.prototype.GetTelemetry = function (id) {
-    let txc = this;
-    return new Promise(function (resolve, reject) {
-        if (id <= 0) {
-            return reject({
-                error: 'Id must be at least 1.'
+    public start(): Observable<void> {
+        const ctl = this;
+        const startObs: Observable<void> = new Observable<void>(function (observer) {
+            ctl._port = new SerialPort(ctl._serialPort, {
+                baudRate: ctl._baudRate,
+                dataBits: 8,
+                parity: 'none',
+                stopBits: 1,
+                parser: serialport.parsers.readline('\n')
+            }, function (err) {
+                if (err) {
+                    observer.error({ error: err });
+                }
             });
-        }
-
-        function gtTmp(tlmData) {
-            if (tlmData.id === id) {
-                txc._emitter.removeListener('telemetry', gtTmp);
-                resolve(tlmData);
-            }
-        }
-        txc._emitter.on('telemetry', gtTmp);
-        txc.port.write(['gt', id - 1].join(' ') + '\n');
-    });
-};
-
-/**
- * Opens a connection to the radio.
- * @param {txControlCreatedOpenedCallback} onOpened - Run after the connection is opened.
- */
-TxControl.prototype.Start = function () {
-    const ctl = this;
-    return new Promise(function (resolve, reject) {
-        ctl.port = new SerialPort(ctl._serialPort, {
-            baudRate: ctl._baudRate,
-            dataBits: 8,
-            parity: 'none',
-            stopBits: 1,
-            parser: serialport.parsers.readline('\n')
-        }, function (err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve();
         });
+
         if (ctl._useRead) {
-            ctl.port.on("data", function (line) {
-                ctl._ProcessLineReceived(line);
+            startObs.subscribe(() => {
+                ctl._serialData = new Observable<string>(observer => {
+                    ctl._port.on("data", function (line) {
+                        observer.next(line);
+                    });
+                });
+                this.initializeSerialLogging();
             });
         }
-    });
-};
-
-/**
- * Closes an open connection to the radio.
- * @param {txControlClosedCallback} onClosed - Run after the connection is closed.
- */
-TxControl.prototype.Stop = function (onClosed) {
-    if (this.port) {
-        this.port.close(onClosed);
+        return startObs;
     }
-};
 
-/**
- * Displays a message if the message type is one of types that should be displayed.
- * @param {string} msg - The message to display.
- * @param {string | string[]} type - The type or array of types of this message.
- * @returns {boolean} - True if the message was displayed, otherwise false.
- */
-TxControl.prototype.DebugOut = function (msg, type) {
-    if (Array.isArray(type)) {
-        for (var i in type) {
-            if (-1 !== this.debug.indexOf(type[i])) {
-                console.logG(msg);
+    private initializeSerialLogging(): void {
+        this._serialData.subscribe(line => {
+            this.debugOut(line, 'serial');
+        });
+    }
+
+    public serialData(): Observable<string> {
+        return this._serialData;
+    };
+
+    public telemetry(): Observable<TxControlTelemetry> {
+        return this.serialData()
+            .filter(line => !!/^tlm:/.exec(line))
+            .map(line => new TxControlTelemetry(line));
+    };
+
+    private telemetryIdValid(id: number): boolean {
+        if (id <= 0) {
+            return false;
+        }
+        return true;
+    }
+
+    private sendTelemetryRequest(id: number): Observable<void> {
+        const txc = this;
+        if (!this.telemetryIdValid(id)) {
+            return Observable.throw({ error: "Invalid telemetry id." });
+        }
+        return new Observable<void>(function (observer) {
+            txc._port.write(['gt', id - 1].join(' ') + '\n', function (err) {
+                if (err) {
+                    observer.error({ error: err });
+                    return;
+                }
+                observer.next();
+            });
+        });
+    }
+
+    public getTelemetry(id: number): Observable<TxControlTelemetry> {
+        let txc = this;
+        if (!this.telemetryIdValid(id)) {
+            return Observable.throw({ error: "Invalid telemetry id." });
+        }
+        let tmlDataObs = this.telemetry().filter(tlmData => tlmData.id === id).first();
+    };
+
+    /**
+     * Closes an open connection to the radio.
+     * @param {txControlClosedCallback} onClosed - Run after the connection is closed.
+     */
+    public stop(): Observable<boolean> {
+        return new Observable<boolean>(observer => {
+            if (this._port) {
+                this._port.close(err => {
+                    if (err) {
+                        observer.error({ error: err });
+                        return;
+                    }
+                    observer.next(true);
+                });
+            }
+            observer.next(false);
+        });
+    }
+
+    /**
+     * Displays a message if the message type is one of types that should be displayed.
+     * @param {string} msg - The message to display.
+     * @param {string | string[]} type - The type or array of types of this message.
+     * @returns {boolean} - True if the message was displayed, otherwise false.
+     */
+    private debugOut(msg: string, msgType: string[]) {
+        if (Array.isArray(msgType)) {
+            for (var i in msgType) {
+                if (-1 !== this.debug.indexOf(msgType[i])) {
+                    console.log(msg);
+                    return true;
+                }
+            }
+        } else {
+            if (-1 !== this.debug.indexOf("all") || -1 !== this.debug.indexOf(msgType)) {
+                console.log(msg);
                 return true;
             }
         }
-    } else {
-        if (-1 !== this.debug.indexOf("all") || -1 !== this.debug.indexOf(type)) {
-            console.log(msg);
-            return true;
-        }
-    }
-    return false;
-};
+        return false;
+    };
 
-/**
- * Adds a listener that is run on any telmetery data recieved.
- * @param {} handler
- * @return {boolean} - True, if the handler was added, otherwise false (telemetry or serial read not enabled).
- */
-TxControl.prototype.OnTelemetry = function (handler) {
-    if (this._useTelemetry) {
-        this._emitter.on("telemetry", handler);
-    }
-};
-
-/**
- * Tells the radio to update the position of a channel.
- * @param {number} channel - The 1 - based index of the channel.
- * @param {number} value - The position of the channel update (from -1024 to 1024).
- * @param {resolve} txControlResolve - Run if the channel is set sucessfully.
- * @param {reject} txControlReject - Run if the channel is not set sucessfully.
- * @returns {boolean} - True if we were able to successfully write to the port, false if writing failed, and undefined if we don't know yet.
- */
-TxControl.prototype._SendChannel = function (channel, value) {
-    const ctl = this;
-    return new Promise(function (resolve, reject) {
+    /**
+     * Tells the radio to update the position of a channel.
+     * @param {number} channel - The 1 - based index of the channel.
+     * @param {number} value - The position of the channel update (from -1024 to 1024).
+     * @param {resolve} txControlResolve - Run if the channel is set sucessfully.
+     * @param {reject} txControlReject - Run if the channel is not set sucessfully.
+     * @returns {boolean} - True if we were able to successfully write to the port, false if writing failed, and undefined if we don't know yet.
+     */
+    private sendChannel(channel: number, value: number): Observable<void> {
+        const ctl = this;
         if (value < -1024 || value > 1024) {
-            reject(new RangeError("_SendChannel: value must be between -1024 and 1024"));
-            return;
+            return Observable.throw({ error: "sendChannel: value must be between -1024 and 1024" });
         }
 
         let send = ['sc', channel, value].join(' ');
-        console.log(send);
-        try {
-            this.port.write(send + '\n',
-                function () {
-                    ctl._channelValues[channel] = value;
-                    ctl.DebugOut("Sent " + value + " to channel " + channel, "status");
-                    if (resolve) {
-                        resolve();
-                    }
-                });
-        } catch (e) {
-            if (reject) {
-                reject(e);
-            }
-        }
-    });
-};
-
-TxControl.prototype._GetChannelMap = function (channelIn) {
-    if (this.channelMap) {
-        var channelOut = this.channelMap[channelIn];
-        if (channelOut) {
-            this.DebugOut("Mapped: " + channelIn + " -> " + channelOut, "input");
-            return channelOut;
-        }
-        return undefined;
-    }
-    return channelIn;
-};
-
-/**
- * Tells the radio to update the position of a channel if the position is different from the last one.
- * @param {number} channel - The 1 - based index of the channel.
- * @param {number} value - The position of the channel update (from 0 to 2048).
- * @param {resolve} txControlResolve - Run if the channel is set sucessfully.
- * @param {reject} txControlReject - Run if the channel is not set sucessfully.
- * @returns {boolean} True, if the channel value was sent successfully, or wasn't sent because it hasn't changed, otherwise false.
- */
-TxControl.prototype.SetChannel = function (channel, value) {
-    var channelMapped = this._GetChannelMap(channel);
-
-    if (!channelMapped) {
-        return Promise.reject(new Error(`Channel ${channel} not mapped.`));
-    }
-    if (0 > channelMapped) {
-        channelMapped = -channelMapped;
-        value = -value;
-    }
-    if (this._channelCount < channelMapped) {
-        return Promise.reject(new RangeError("SetChannel: Mapped channel must be between 1 and " + this._channelCount));
-    }
-    if (value != this._channelValues[channelMapped]) {
-        return this._SendChannel(channelMapped, value);
-    }
-};
-
-/**
- * Sets some channel positions on the radio.
- * @param {object} values - A dictionary of channel values.
- * @param {resolve} txControlResolve - Run for each channel channel that is set sucessfully.
- * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
- */
-TxControl.prototype.Set = function (values, resolve, reject) {
-    const ps = [];
-    for (let channel in values) {
-        ps.push(this.SetChannel(parseInt(channel), parseInt(values[channel])));
-    }
-    return Promise.all(ps);
-};
-
-/**
- * Sets some channel positions on the radio.
- * @param {object} values - A dictionary of channel values in percent format ( -100 to 100).
- * @param {resolve} txControlResolve - Run for each channel channel that is set sucessfully.
- * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
- */
-TxControl.prototype.SetPercent = function (values, resolve, reject) {
-    const ps = [];
-    for (let channel in values) {
-        const p = this.SetChannel(parseInt(channel), parseInt((parseFloat(values[channel])) * 1024 / 100));
-        ps.push(p);
-    }
-    return Promise.all(ps);
-};
-
-
-/**
- * Used to display the usage of a command.
- * @param {string[]} cmd - The parts of the command.
- */
-TxControl._PrintUsage = function (cmd) {
-    var usage = "Usage";
-    for (var i in cmd) {
-        usage += " " + cmd[i];
-    }
-    this.DebugOut(usage, "usage");
-};
-
-/**
- * Does something as described by an entered command.
- * @param {string|string[]} cmd - The entered command, or the entered command split on whitespace.
- * @returns {string} - A status message.
- */
-TxControl.prototype.ProcessCommand = function (cmd) {
-    if (!Array.isArray(cmd)) {
-        cmd = cmd.split(' ');
-    }
-    var usage = ["COMMAND (e | exit | so | setone | sm | setmultiple)", "[ARGUMENTS]"];
-    if (0 === cmd.length) {
-        return "NONE";
-    } else if (-1 !== ["e", "exit"].indexOf(cmd[0])) {
-        usage = [cmd[0]];
-        return "EXIT";
-    } else if (-1 !== ["so", "setone"].indexOf(cmd[0])) {
-        usage = [cmd[0], "CHANNEL#", "VALUE"];
-        if (2 < cmd.length) {
+        this.debugOut(send, ['send']);
+        return new Observable<void>(observer => {
             try {
-                var channelsSo = {};
-                channelsSo[parseInt(cmd[1])] = parseInt(cmd[2]);
-                this.Set(channelsSo);
-                return "SET ONE";
-            } catch (e) {
-                return "ERROR: " + e;
+                this._port.write(send + '\n',
+                    function (err) {
+                        if (err) {
+                            observer.error({ error: err });
+                            return;
+                        }
+                        ctl._channelValues[channel] = value;
+                        ctl.debugOut("Sent " + value + " to channel " + channel, "status");
+                        observer.next();
+                    });
+            } catch (err) {
+                observer.error({ error: err });
             }
-        } else {
-            TxControl._PrintUsage(usage);
-            return "DID NOT SET ONE";
-        }
-    } else if (-1 !== ["sp", "sop", "spo", "setpercent", "setonepercent"].indexOf(cmd[0])) {
-        usage = [cmd[0], "CHANNEL#", "VALUE (-100 to 100)"];
-        if (2 < cmd.length) {
-            try {
-                var channelsSp = {};
-                channelsSp[parseInt(cmd[1])] = parseFloat(cmd[2]);
-                this.SetPercent(channelsSp);
-                return "SET ONE USING PERCENT";
-            } catch (e) {
-                return "ERROR: " + e;
+        });
+    };
+
+    getChannelMap(channelIn: number): number {
+        if (this._channelMap) {
+            var channelOut = this._channelMap[channelIn];
+            if (channelOut) {
+                this.debugOut("Mapped: " + channelIn + " -> " + channelOut, ["input", "channel map"]);
+                return channelOut;
             }
-        } else {
-            this._PrintUsage(usage);
-            return "DID NOT SET ONE";
+            return undefined;
         }
-    } else if (-1 !== ["sm", "setmultiple"].indexOf(cmd[0])) {
-        usage = [cmd[0], "[VALUE | CHANNEL#:VALUE] ..."];
-        if (1 < cmd.length) {
-            var channel = 0;
-            var channelsWritten = [];
-            var cmdSkipFirst = cmd.slice(1);
-            for (var i in cmdSkipFirst) {
-                var value = cmdSkipFirst[i];
-                if (0 <= value.indexOf(":")) {
-                    var va = value.split(":");
+        return channelIn;
+    };
 
-                    if (2 == va.length) {
-                        channel = parseInt(va[0]);
-                        value = parseInt(va[1]);
-                    }
-                } else {
-                    value = parseInt(value);
-                }
-                if (!isNaN(channel) && !isNaN(value)) {
-                    this.SetChannel(channel, value);
-                    channelsWritten.append(channel);
-                    ++channel;
-                }
-            }
-            return "SET " + channelsWritten.length;
-        } else {
-            this._PrintUsage(usage);
-            return "SET NONE";
+    /**
+     * Tells the radio to update the position of a channel if the position is different from the last one.
+     * @param {number} channel - The 1 - based index of the channel.
+     * @param {number} value - The position of the channel update (from 0 to 2048).
+     * @param {resolve} txControlResolve - Run if the channel is set sucessfully.
+     * @param {reject} txControlReject - Run if the channel is not set sucessfully.
+     * @returns {boolean} True, if the channel value was sent successfully, or wasn't sent because it hasn't changed, otherwise false.
+     */
+    public SetChannel(channel: number, value: number): Observable<void> {
+        var channelMapped = this.getChannelMap(channel);
+
+        if (!channelMapped) {
+            return Observable.throw({ error: `Channel ${channel} not mapped.` });
         }
-    }
-    return "NOTHING";
-};
-
-/**
- * Creates a REPL for entering commands.
- * @param {txControlReplClosedCallback} onExit - Run when the REPL is exited.
- */
-TxControl.prototype.SendLoop = function (onExit) {
-    var ctl = this;
-
-    var readline = require('readline');
-
-    var stdio = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    var onLine = function (cmd) {
-        cmd = cmd.split(' ');
-        if (!isNaN(parseInt(cmd[0]))) {
-            cmd.unshift("so");
+        if (0 > channelMapped) {
+            channelMapped = -channelMapped;
+            value = -value;
         }
-
-        var result = ctl.ProcessCommand(cmd);
-        ctl.DebugOut(result, 'status');
-        switch (result) {
-            case "EXIT":
-                stdio.removeListener('line', onLine);
-                stdio.close();
-                if (onExit) {
-                    onExit();
-                }
+        if (this._channelCount < channelMapped) {
+            return Observable.throw({ error: "SetChannel: Mapped channel must be between 1 and " + this._channelCount });
+        }
+        if (value != this._channelValues[channelMapped]) {
+            return this.sendChannel(channelMapped, value);
         }
     };
 
-    stdio.on('line', onLine);
-};
+    /**
+     * Sets some channel positions on the radio.
+     * @param {object} values - A dictionary of channel values
+     * @param {resolve} txControlResolve - Run for each channel channel that is set sucessfully.
+     * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
+     */
+    public Set(values: ChannelValueMap): Observable<void[]> {
+        const ps = [];
+        for (let channel in values) {
+            ps.push(this.SetChannel(parseInt(channel), parseInt(values[channel.toString()], 10)));
+        }
+        return Observable.forkJoin(ps);
+    };
 
-TxControl.prototype.SendControlLoop = function (onExit) {
-    var ctl = this;
-    var Mouse = require("node-mouse");
-    var keypress = require("keypress");
+    /**
+     * Sets some channel positions on the radio.
+     * @param {object} values - A dictionary of channel values in percent format ( -100 to 100).
+     * @param {resolve} txControlResolve - Run for each channel channel that is set sucessfully.
+     * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
+     */
+    public SetPercent(values: ChannelValueMap) {
+        const ps = [];
+        for (let channel in values) {
+            const channelStr = channel.toString();
+            const channelInt = parseInt(channelStr);
+            const channelValuePercentStr = values[channelStr];
+            const channelValuePercentFloat = parseFloat(channelValuePercentStr);
+            const channelValueFloat = channelValuePercentFloat * 1024 / 100;
+            const channelValueStr = channelValueFloat.toString();
+            const channelValueInt = parseInt(channelValueStr);
 
-    var mouse = new Mouse();
-    keypress(process.stdin);
+            const p = this.SetChannel(channelInt, channelValueInt);
+            ps.push(p);
+        }
+        return Observable.forkJoin(ps);
+    };
 
-    mouse.on("mousemove", function (event) {
-        ctl.Set({
-            2: event.xDelta * 16,
-            3: event.yDelta * 16
+
+    /**
+     * Used to display the usage of a command.
+     * @param {string[]} cmd - The parts of the command.
+     */
+    private printUsage(cmd: string[]) {
+        const usage = "Usage: " + cmd.join(" ");
+        this.debugOut(usage, ["usage"]);
+    };
+
+    /**
+     * Does something as described by an entered command.
+     * @param {string|string[]} cmd - The entered command, or the entered command split on whitespace.
+     * @returns {string} - A status message.
+     */
+    processCommand(cmd: string[]) {
+        let usage = ["COMMAND (e | exit | so | setone | sm | setmultiple)", "[ARGUMENTS]"];
+        if (0 === cmd.length) {
+            return "NONE";
+        } else if (-1 !== ["e", "exit"].indexOf(cmd[0])) {
+            usage = [cmd[0]];
+            return "EXIT";
+        } else if (-1 !== ["so", "setone"].indexOf(cmd[0])) {
+            usage = [cmd[0], "CHANNEL#", "VALUE"];
+            if (2 < cmd.length) {
+                try {
+                    let channelsSo = {};
+                    channelsSo[parseInt(cmd[1])] = parseInt(cmd[2]);
+                    this.Set(channelsSo);
+                    return "SET ONE";
+                } catch (e) {
+                    return "ERROR: " + e;
+                }
+            } else {
+                this.printUsage(usage);
+                return "DID NOT SET ONE";
+            }
+        } else if (-1 !== ["sp", "sop", "spo", "setpercent", "setonepercent"].indexOf(cmd[0])) {
+            usage = [cmd[0], "CHANNEL#", "VALUE (-100 to 100)"];
+            if (2 < cmd.length) {
+                try {
+                    var channelsSp = {};
+                    channelsSp[parseInt(cmd[1])] = parseFloat(cmd[2]);
+                    this.SetPercent(channelsSp);
+                    return "SET ONE USING PERCENT";
+                } catch (e) {
+                    return "ERROR: " + e;
+                }
+            } else {
+                this.printUsage(usage);
+                return "DID NOT SET ONE";
+            }
+        } else if (-1 !== ["sm", "setmultiple"].indexOf(cmd[0])) {
+            usage = [cmd[0], "[VALUE | CHANNEL#:VALUE] ..."];
+            if (1 < cmd.length) {
+                let channel: number = 0;
+                let channelsWritten: number[] = [];
+                let cmdSkipFirst = cmd.slice(1);
+                for (const i in cmdSkipFirst) {
+                    const valueStr = cmdSkipFirst[i];
+                    let value: number;
+                    if (0 <= valueStr.indexOf(":")) {
+                        const valueArray = valueStr.split(":");
+
+                        if (2 == valueArray.length) {
+                            channel = parseInt(valueArray[0]);
+                            value = parseInt(valueArray[1]);
+                        }
+                    } else {
+                        value = parseInt(valueStr);
+                    }
+                    if (!isNaN(channel) && !isNaN(value)) {
+                        this.SetChannel(channel, value);
+                        channelsWritten.push(channel);
+                        ++channel;
+                    }
+                }
+                return "SET " + channelsWritten.length;
+            } else {
+                this.printUsage(usage);
+                return "SET NONE";
+            }
+        }
+        return "NOTHING";
+    };
+
+    /**
+     * Creates a REPL for entering commands.
+     * @param {txControlReplClosedCallback} onExit - Run when the REPL is exited.
+     */
+    public SendLoop(onExit) {
+        const ctl = this;
+
+        var stdio = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
         });
-        setTimeout(function () {
+
+        var onLine = function (cmd) {
+            cmd = cmd.split(' ');
+            if (!isNaN(parseInt(cmd[0]))) {
+                cmd.unshift("so");
+            }
+
+            var result = ctl.processCommand(cmd);
+            ctl.debugOut(result, ['status']);
+            switch (result) {
+                case "EXIT":
+                    stdio.removeListener('line', onLine);
+                    stdio.close();
+                    if (onExit) {
+                        onExit();
+                    }
+            }
+        };
+
+        stdio.on('line', onLine);
+    };
+
+    public SendControlLoop(onExit) {
+        const ctl = this;
+        const Mouse = require("node-mouse");
+        const keypress = require("keypress");
+
+        const mouse = new Mouse();
+        keypress(process.stdin);
+
+        mouse.on("mousemove", function (event) {
             ctl.Set({
-                2: event.xDelta * 256,
-                3: event.yDelta * 256
+                2: event.xDelta * 16,
+                3: event.yDelta * 16
             });
-        }, 0);
-        ctl.DebugOut(event, "input");
-    });
-    var throttle = -1024;
-    var rudder = 0;
-    process.stdin.on('keypress', function (ch, key) {
-        if (!key) {
-            return;
-        }
-
-        if (key.name == "a") {
-            rudder -= 16;
-        } else if (key.name == "d") {
-            rudder += 16;
-        } else if (key.name == "w") {
-            throttle += 16;
-        } else if (key.name == "s") {
-            throttle -= 16;
-        } else if (key.name == "r") {
-            throttle = -1024;
-        } else if (key.name == "t") {
-            rudder = 0;
-        } else if (key.name == "c") {
-            process.stdin.pause();
-            process.stdin.destroy();
-        }
-        if (1024 < throttle) {
-            throttle = 1024;
-        } else if (-1024 > throttle) {
-            throttle = -1024;
-        }
-
-        ctl.Set({
-            1: throttle,
-            4: rudder
+            setTimeout(function () {
+                ctl.Set({
+                    2: event.xDelta * 256,
+                    3: event.yDelta * 256
+                });
+            }, 0);
+            ctl.debugOut(event, "input");
         });
-        DebugOut('key ' + key.name + ' pressed, throttle set to: ' + throttle, "input");
-    });
-    process.stdin.setRawMode(true);
-};
+        var throttle = -1024;
+        var rudder = 0;
+        process.stdin.on('keypress', function (ch, key) {
+            if (!key) {
+                return;
+            }
 
-module.exports = TxControl;
+            if (key.name == "a") {
+                rudder -= 16;
+            } else if (key.name == "d") {
+                rudder += 16;
+            } else if (key.name == "w") {
+                throttle += 16;
+            } else if (key.name == "s") {
+                throttle -= 16;
+            } else if (key.name == "r") {
+                throttle = -1024;
+            } else if (key.name == "t") {
+                rudder = 0;
+            } else if (key.name == "c") {
+                process.stdin.pause();
+                process.stdin.destroy();
+            }
+            if (1024 < throttle) {
+                throttle = 1024;
+            } else if (-1024 > throttle) {
+                throttle = -1024;
+            }
+
+            ctl.Set({
+                1: throttle,
+                4: rudder
+            });
+            debugOut('key ' + key.name + ' pressed, throttle set to: ' + throttle, "input");
+        });
+        process.stdin.setRawMode(true);
+    };
+}
 
 /**
  * Called when a TxControl connection is closed.
