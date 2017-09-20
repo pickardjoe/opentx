@@ -95,7 +95,7 @@ export class TxControl {
         });
     }
 
-    public serialData(): Observable<string> {
+    protected serialData(): Observable<string> {
         return this._serialData;
     };
 
@@ -232,7 +232,7 @@ export class TxControl {
      * @param {reject} txControlReject - Run if the channel is not set sucessfully.
      * @returns {boolean} True, if the channel value was sent successfully, or wasn't sent because it hasn't changed, otherwise false.
      */
-    public SetChannel(channel: number, value: number): Observable<void> {
+    public setChannel(channel: number, value: number): Observable<void> {
         var channelMapped = this.getChannelMap(channel);
 
         if (!channelMapped) {
@@ -256,10 +256,10 @@ export class TxControl {
      * @param {resolve} txControlResolve - Run for each channel channel that is set sucessfully.
      * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
      */
-    public Set(values: ChannelValueMap): Observable<void[]> {
+    public set(values: ChannelValueMap): Observable<void[]> {
         const ps = [];
         for (let channel in values) {
-            ps.push(this.SetChannel(parseInt(channel), parseInt(values[channel.toString()], 10)));
+            ps.push(this.setChannel(parseInt(channel), parseInt(values[channel.toString()], 10)));
         }
         return Observable.forkJoin(ps);
     };
@@ -281,7 +281,7 @@ export class TxControl {
             const channelValueStr = channelValueFloat.toString();
             const channelValueInt = parseInt(channelValueStr);
 
-            const p = this.SetChannel(channelInt, channelValueInt);
+            const p = this.setChannel(channelInt, channelValueInt);
             ps.push(p);
         }
         return Observable.forkJoin(ps);
@@ -315,7 +315,7 @@ export class TxControl {
                 try {
                     let channelsSo = {};
                     channelsSo[parseInt(cmd[1])] = parseInt(cmd[2]);
-                    this.Set(channelsSo);
+                    this.set(channelsSo);
                     return "SET ONE";
                 } catch (e) {
                     return "ERROR: " + e;
@@ -359,7 +359,7 @@ export class TxControl {
                         value = parseInt(valueStr);
                     }
                     if (!isNaN(channel) && !isNaN(value)) {
-                        this.SetChannel(channel, value);
+                        this.setChannel(channel, value);
                         channelsWritten.push(channel);
                         ++channel;
                     }
@@ -377,7 +377,7 @@ export class TxControl {
      * Creates a REPL for entering commands.
      * @param {txControlReplClosedCallback} onExit - Run when the REPL is exited.
      */
-    public SendLoop(onExit) {
+    public sendLoop(onExit) {
         const ctl = this;
 
         const stdio = readline.createInterface({
@@ -415,12 +415,12 @@ export class TxControl {
         keypress(process.stdin);
 
         mouse.on("mousemove", function (event) {
-            ctl.Set({
+            ctl.set({
                 2: event.xDelta * 16,
                 3: event.yDelta * 16
             });
             setTimeout(function () {
-                ctl.Set({
+                ctl.set({
                     2: event.xDelta * 256,
                     3: event.yDelta * 256
                 });
@@ -456,7 +456,7 @@ export class TxControl {
                 throttle = -1024;
             }
 
-            ctl.Set({
+            ctl.set({
                 1: throttle,
                 4: rudder
             });
