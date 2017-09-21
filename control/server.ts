@@ -36,50 +36,54 @@ const servoMap = {
     }
 };
 
-const TxControl = require('./TxControl');
+import {
+    TxControl
+} from './TxControl';
+
 
 const ttyPort = process.argv[2];
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 
-const ctl = new TxControl(ttyPort, 115200, function() {
+const ctl = new TxControl(ttyPort, 115200);
+ctl.start().subscribe(function () {
     ctl.debug = ['all'];
-    ctl.OnTelemetry(function(telemData) {
+    ctl.telemetry().subscribe(function (telemData) {
         console.log(JSON.stringify(telemData));
     });
-    ctl.Set(initial);
-    app.get('/', function(req, res) {
+    ctl.set(initial);
+    app.get('/', function (req, res) {
         res.sendStatus(404);
     });
     app.use(bodyParser.json());
-    app.get('/wave', function(req, res) {
-        setTimeout(() => ctl.Set({
+    app.get('/wave', function (req, res) {
+        setTimeout(() => ctl.set({
             2: 768,
             3: -512
         }), 0);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: -512
         }), 800);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: 512
         }), 1000);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: -512
         }), 1200);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: 512
         }), 1400);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: -512
         }), 1600);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: 512
         }), 1800);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: -512
         }), 2000);
-        setTimeout(() => ctl.Set({
+        setTimeout(() => ctl.set({
             1: -384,
             2: 256,
             3: 512
@@ -87,7 +91,7 @@ const ctl = new TxControl(ttyPort, 115200, function() {
         res.sendStatus(200);
     });
 
-    app.put('/joint/:leg/:section', function(req, res) {
+    app.put('/joint/:leg/:section', function (req, res) {
         const legName = req.params.leg;
         const legNameNormalized = legName && legName.toLowerCase();
         const sectionNumber = parseInt(req.params.section);
@@ -111,14 +115,14 @@ const ctl = new TxControl(ttyPort, 115200, function() {
             });
             return;
         }
-        ctl.Set({
-            section: value
+        ctl.set({
+            [section]: value
         });
         res.sendStatus(200);
     });
 
-    app.put('/reset', function(req, res) {
-        ctl.Set(initial);
+    app.put('/reset', function (req, res) {
+        ctl.set(initial);
         res.sendStatus(200);
     });
 
