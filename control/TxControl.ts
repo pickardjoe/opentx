@@ -1,4 +1,4 @@
-import { Observable, Subscriber } from 'rxjs/Rx';
+import { Observable, Subscriber, Subject } from 'rxjs/Rx';
 import * as readline from 'readline';
 import * as _ from 'lodash';
 import * as  serialport from 'serialport';
@@ -17,7 +17,7 @@ interface ChannelMap {
 export class TxControl {
     private readonly _channelCount: number = 16;
     private _serialPort: string;
-    public debug: string[] = [];
+    public debug: string[] = ['all'];
     private _baudRate: number = 115200;
 
     private _channelValues: ChannelValueMap = {};
@@ -47,7 +47,7 @@ export class TxControl {
 
     public start(): Observable<void> {
         const ctl = this;
-        const startObs: Observable<void> = new Observable<void>(function (observer) {
+        const startObs: Observable<void> = (new Observable<void>(function (observer) {
             ctl._port = new SerialPort(ctl._serialPort, {
                 baudRate: ctl._baudRate,
                 dataBits: 8,
@@ -57,9 +57,11 @@ export class TxControl {
             }, function (err) {
                 if (err) {
                     observer.error({ error: err });
+                    return;
                 }
+                observer.next();
             });
-        });
+        })).share();
 
         startObs.catch((err: Error) => {
             this.debugOut(JSON.stringify(err.message), ['error', 'serial']);
@@ -126,7 +128,10 @@ export class TxControl {
         if (!this.telemetryIdValid(id)) {
             return Observable.throw({ error: "Invalid telemetry id." });
         }
-        let tmlDataObs = this.telemetry().filter(tlmData => tlmData.id === id).first();
+        const tlmDataSubj = new Subject<TxControlTelemetry>();
+        let tlmDataObs = this.telemetry().filter(tlmData => tlmData.id === id).first().subscribe(tlmDataSubj);
+        this.sendTelemetryRequest(id).publish()
+        return tlmDataSubj;
     };
 
     /**
@@ -145,7 +150,7 @@ export class TxControl {
                 });
             }
             observer.next(false);
-        });
+        }).publish();
     }
 
     /**
@@ -154,19 +159,16 @@ export class TxControl {
      * @param {string | string[]} type - The type or array of types of this message.
      * @returns {boolean} - True if the message was displayed, otherwise false.
      */
-    private debugOut(msg: string, msgType: string[]) {
-        if (Array.isArray(msgType)) {
-            for (var i in msgType) {
-                if (-1 !== this.debug.indexOf(msgType[i])) {
-                    console.log(msg);
-                    return true;
-                }
-            }
-        } else {
-            if (-1 !== this.debug.indexOf("all") || -1 !== this.debug.indexOf(msgType)) {
+    private debugOut(msg: string, msgType: string[]): boolean {
+        for (var i in msgType) {
+            if (-1 !== this.debug.indexOf(msgType[i])) {
                 console.log(msg);
                 return true;
             }
+        }
+        if (-1 !== this.debug.indexOf("all")) {
+            console.log(msg);
+            return true;
         }
         return false;
     };
@@ -187,7 +189,7 @@ export class TxControl {
 
         let send = ['sc', channel, value].join(' ');
         this.debugOut(send, ['send']);
-        return new Observable<void>(observer => {
+        const sendObs = new Observable<void>(observer => {
             try {
                 this._port.write(send + '\n',
                     function (err) {
@@ -203,6 +205,9 @@ export class TxControl {
                 observer.error({ error: err });
             }
         });
+        const sendSubj = new Subject<void>();
+        sendObs.subscribe(sendSubj);
+        return sendSubj;
     };
 
     getChannelMap(channelIn: number): number {
@@ -249,12 +254,12 @@ export class TxControl {
      * @param {resolve} txControlResolve - Run for each channel channel that is set sucessfully.
      * @param {reject} txControlReject - Run for each channel that is not set sucessfully.
      */
-    public set(values: ChannelValueMap): Observable<void[]> {
+    public set(values: ChannelValueMap): Observable<any[]> {
         const ps = [];
         for (let channel in values) {
             ps.push(this.setChannel(parseInt(channel), parseInt(values[channel.toString()], 10)));
         }
-        return Observable.forkJoin(ps);
+        return Observable.forkJoin(ps).publish();
     };
 
     /**
