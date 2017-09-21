@@ -17,10 +17,8 @@ interface ChannelMap {
 export class TxControl {
     private readonly _channelCount: number = 16;
     private _serialPort: string;
-    private debug: string[] = [];
+    public debug: string[] = [];
     private _baudRate: number = 115200;
-    private _useRead: boolean = false;
-    private _useTelemetry: boolean = false;
 
     private _channelValues: ChannelValueMap = {};
     private _serialData: Observable<string> = null;
@@ -35,21 +33,15 @@ export class TxControl {
      * @param {txControlCreatedOpenedCallback} onOpened - Run when the  serial port to the OpenTX radio is opened.
      * @param {boolean|undefined|txControlTelemetryReceivedCallback} onOpened - True, if telemetry should be enabled. A telemetry data callback can also be used.
      */
-    constructor(serialPort: string, baudRate: number = 115200, useTelemetry: boolean = true) {
+    constructor(serialPort: string, baudRate: number = 115200) {
         this._serialPort = serialPort;
         if (baudRate) {
             this._baudRate = baudRate;
         }
-
-        this._useTelemetry = useTelemetry;
-
-        if (this._useTelemetry) { // Check other read data types here.
-            this._useRead = true;
-        }
     }
 
-    public static create(serialPort: string, baudRate: number = 115200, useTelemetry: boolean = true): Observable<void> {
-        const txc = new TxControl(serialPort, baudRate, useTelemetry);
+    public static create(serialPort: string, baudRate: number = 115200): Observable<void> {
+        const txc = new TxControl(serialPort, baudRate);
         return txc.start();
     }
 
@@ -74,18 +66,19 @@ export class TxControl {
             return Observable.throw(err);
         });
 
-        if (ctl._useRead) {
-            startObs.subscribe(() => {
-                ctl._serialData = new Observable<string>(observer => {
-                    ctl._port.on("data", function (line) {
-                        observer.next(line);
-                    });
+        startObs.subscribe(() => {
+            this.debugOut('Serial port opened.', ['serial-open', 'serial']);
+            const serialDataObs = new Observable<string>(observer => {
+                ctl._port.on("data", function (line) {
+                    observer.next(line);
                 });
-                this.initializeSerialLogging();
-            }, err => {
-                this.debugOut(JSON.stringify(err), ['error', 'serial']);
             });
-        }
+            ctl._serialData = serialDataObs.share();
+            this.initializeSerialLogging();
+        }, err => {
+            this.debugOut(JSON.stringify(err), ['error', 'serial']);
+        });
+
         return startObs;
     }
 

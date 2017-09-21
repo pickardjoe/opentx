@@ -8,6 +8,6 @@ ctl.start().subscribe(function () {
         console.log(JSON.stringify(telemData));
     });
     ctl.sendLoop(function () {
-        ctl.Stop();
+        ctl.stop();
     });
-});
+}, console.error);
