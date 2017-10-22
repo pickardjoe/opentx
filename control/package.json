@@ -4,6 +4,8 @@
   "description": "A module for interacting with OpenTX compatible radios using javascript.",
   "main": "TxControl.js",
   "dependencies": {
+    "body-parser": "^1.18.1",
+    "express": "^4.15.4",
     "keypress": "^0.2.1",
     "lodash": "^4.17.4",
     "node-mouse": "0.0.2",
