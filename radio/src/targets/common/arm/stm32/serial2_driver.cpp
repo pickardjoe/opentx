@@ -93,7 +93,7 @@ void serial2Init(unsigned int mode, unsigned int protocol)
       break;
 #if !defined(USB_SERIAL) && (defined(DEBUG) || defined(CLI) || defined(USB_CONTROL))
     case UART_MODE_DEBUG:
-      uart3Setup(DEBUG_BAUDRATE, false);
+		uart3Setup(DEBUG_BAUDRATE, false);
       break;
 #endif
     case UART_MODE_TELEMETRY:
